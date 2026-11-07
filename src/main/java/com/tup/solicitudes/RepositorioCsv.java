@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.function.Function;
 
@@ -39,21 +40,31 @@ public class RepositorioCsv extends RepositorioEnMemoria {
         escribir();
     }
 
+    /**
+     * Arma TODO el contenido antes de abrir el archivo: si algo falla al armarlo, el archivo anterior queda intacto
+     * (antes se abria primero, lo que lo truncaba, y un error a mitad de camino lo dejaba vacio).
+     */
     private void escribir() {
-        try {
-            FileWriter escritor = new FileWriter(rutaArchivo);
-            for (Solicitud solicitud : listarTodas()) {
-                escritor.write(solicitud.getId() + ";" + solicitud.getEstudiante().getLegajo() + ";"
-                        + solicitud.getEstudiante().getNombre() + ";"
-                        + solicitud.getEstudiante().getEmail() + ";" + solicitud.getTipo() + ";"
-                        + solicitud.getDescripcion().replace(';', ',') + ";"
-                        + solicitud.getPrioridad() + ";" + solicitud.isUrgente() + ";" + solicitud.getEstado() + ";"
-                        + (solicitud.getResponsable() == null ? ID_SIN_RESPONSABLE : solicitud.getResponsable().getId())
-                        + ";" + solicitud.getFechaCreacion() + "\n");
-            }
-            escritor.close();
-        } catch (Exception ex) {
+        StringBuilder contenido = new StringBuilder();
+        for (Solicitud solicitud : listarTodas()) {
+            contenido.append(aLinea(solicitud));
         }
+        try (FileWriter escritor = new FileWriter(rutaArchivo)) {
+            escritor.write(contenido.toString());
+        } catch (IOException ex) {
+            // Pendiente: los errores de escritura todavia se ignoran (defecto D3, se corrige en el commit siguiente).
+        }
+    }
+
+    private String aLinea(Solicitud solicitud) {
+        String descripcion = solicitud.getDescripcion() == null ? "" : solicitud.getDescripcion();
+        return solicitud.getId() + ";" + solicitud.getEstudiante().getLegajo() + ";"
+                + solicitud.getEstudiante().getNombre() + ";"
+                + solicitud.getEstudiante().getEmail() + ";" + solicitud.getTipo() + ";"
+                + descripcion.replace(';', ',') + ";"
+                + solicitud.getPrioridad() + ";" + solicitud.isUrgente() + ";" + solicitud.getEstado() + ";"
+                + (solicitud.getResponsable() == null ? ID_SIN_RESPONSABLE : solicitud.getResponsable().getId())
+                + ";" + solicitud.getFechaCreacion() + "\n";
     }
 
     /**

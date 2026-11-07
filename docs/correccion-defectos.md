@@ -65,3 +65,21 @@ Cada entrada dice: qué pasaba, qué pasa ahora, qué test cambió y por qué es
 - **Test cambiado:** `d7_cargarDosVecesDuplicaLasSolicitudes` → `d7_cargarDosVecesDejaLoMismoQueCargarUnaVez`.
 - **Por qué mejora:** una operación de carga no debería poder corromper los datos por repetirse; también evita ids
   duplicados, que rompían la búsqueda por id.
+
+---
+
+## D4. Pérdida silenciosa de datos al guardar con una descripción nula
+
+- **Antes:** `registrarSolicitud(..., descripcion = null, ...)` devolvía un id válido, pero al guardar el CSV el sistema
+  ya había abierto (y por lo tanto truncado) el archivo; el `NullPointerException` posterior quedaba oculto y el archivo
+  quedaba **vacío**: se perdían también las solicitudes anteriores. Además el archivo no se cerraba.
+- **Ahora:** (1) `RepositorioCsv` arma todo el contenido **antes** de abrir el archivo, así que un error al armarlo ya
+  no puede dejar el archivo a medias; (2) usa `try-with-resources`, que siempre lo cierra; (3) una descripción nula se
+  guarda como texto vacío. Con la descripción nula el archivo conserva las dos solicitudes y al recargar vuelven ambas.
+- **Código:** `RepositorioCsv.escribir` y `aLinea`.
+- **Test cambiado:** `d4_descripcionNulaVaciaElCsvSinAvisarYDevuelveUnIdValido` →
+  `d4_descripcionNulaSeGuardaVaciaYNoSeTruncaElCsv`. Antes exigía `0` líneas en el archivo; ahora exige `2`, y que
+  la recarga devuelva las dos solicitudes.
+- **Por qué mejora:** el peor efecto del smell de los `catch` vacíos era este: un dato de entrada raro destruía datos
+  ya guardados sin ningún aviso. Además desaparece la fuga del archivo abierto (por la que los tests tuvieron que
+  limpiar el directorio temporal a mano en Windows).

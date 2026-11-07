@@ -69,10 +69,14 @@ class DefectosLatentesCaracterizacionTest {
         return Files.readAllLines(archivo).size();
     }
 
-    // ---------- D4: perdida silenciosa de datos con descripcion nula (solo por API) ----------
+    // ---------- D4: descripcion nula (solo por API) ----------
 
+    // CAMBIO DELIBERADO (correccion del defecto D4): antes se llamaba
+    // d4_descripcionNulaVaciaElCsvSinAvisarYDevuelveUnIdValido y exigia que el archivo quedara VACIO (0 lineas,
+    // se perdia tambien la solicitud anterior). Ahora la descripcion nula se guarda como texto vacio, el archivo
+    // conserva todas las solicitudes y al recargar vuelven las dos.
     @Test
-    void d4_descripcionNulaVaciaElCsvSinAvisarYDevuelveUnIdValido() throws IOException {
+    void d4_descripcionNulaSeGuardaVaciaYNoSeTruncaElCsv() throws IOException {
         Path archivo = csv("d4.csv");
         SistemaSolicitudes sis = new SistemaSolicitudes(archivo.toString());
         sis.registrarSolicitud("L1", "Ana", "a@b.com", "CERTIFICADO", "ok", 1, false, FECHA);
@@ -80,9 +84,14 @@ class DefectosLatentesCaracterizacionTest {
 
         int id = sis.registrarSolicitud("L2", "Beto", "b@b.com", "CERTIFICADO", null, 1, false, FECHA);
 
-        assertEquals(2, id);                         // el metodo informa exito
-        assertEquals(2, sis.getSolicitudes().size());             // y la memoria tiene las 2
-        assertEquals(0, lineas(archivo));            // pero el archivo quedo vacio: se perdio la 1ra tambien
+        assertEquals(2, id);
+        assertEquals(2, sis.getSolicitudes().size());
+        assertEquals(2, lineas(archivo));            // el archivo conserva las dos solicitudes
+
+        SistemaSolicitudes recargado = new SistemaSolicitudes(archivo.toString());
+        recargado.cargar();
+        assertEquals(2, recargado.getSolicitudes().size());
+        assertEquals("", recargado.getSolicitudes().get(1).getDescripcion());
     }
 
     // ---------- D5: estado nulo (solo por API) ----------
