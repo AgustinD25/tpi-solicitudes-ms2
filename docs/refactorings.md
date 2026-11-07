@@ -57,3 +57,52 @@ plazo = PLAZO_EQUIVALENCIA;
   mensaje queda sincronizado. El texto impreso es idéntico (los tests comparan el mensaje).
 - **Verificación:** `mvn test` → 49 tests, 0 fallas.
 - **Nota:** los plazos pasan a ser atributos del enum `TipoSolicitud` cuando se resuelva el smell 4.
+
+---
+
+## R2. Rename (nombres que dicen qué son)
+
+- **Smell que cierra:** 10 (nombres pobres), salvo `lst`, `est` y `resp` (ver nota).
+- **Archivo:** `SistemaSolicitudes.java`.
+- **Qué se hizo:** renombrado de campos privados, métodos auxiliares y variables locales. Sin cambios de lógica.
+
+| Antes | Después |
+|---|---|
+| `cont` | `ultimoId` |
+| `archivo` | `rutaArchivo` |
+| `proc(id)` | `buscarSolicitudPorId(id)` |
+| `aux` | `estudianteIngresado` |
+| `s2` | `nueva` |
+| `flag` | `transicionValida` |
+| `p, ep, r, rz, c, e, rn, b` (en `reporte`) | `pendientes, enProceso, resueltas, rechazadas, certificados, equivalencias, reclamosNota, bajasMateria` |
+| `x`, `e`, `s`, `r` en los `for` | `candidato`, `estudiante`, `solicitud`, `responsable` |
+| `resp` local en `imprimir` (tapaba el campo `resp`) | `nombreResponsable` |
+| `l` | `solicitudes` |
+| `p` (arreglo de `cargar`) | `campos` |
+
+Antes:
+```java
+boolean flag = false;
+if (s.estado.equals("PENDIENTE")) {
+    if (nuevo.equals("EN_PROCESO")) {
+        flag = true;
+    } ...
+}
+if (!flag) { ... }
+```
+
+Después:
+```java
+boolean transicionValida = false;
+if (solicitud.estado.equals("PENDIENTE")) {
+    if (nuevoEstado.equals("EN_PROCESO")) {
+        transicionValida = true;
+    } ...
+}
+if (!transicionValida) { ... }
+```
+
+- **Por qué no se renombró `lst`, `est`, `resp`:** son campos públicos que usan los tests de caracterización
+  (`sis.lst`, `sis.est`, `sis.resp`), que no se pueden modificar. Se dejó un comentario en el código que lo explica.
+  Se cierran cuando se encapsule la clase (ver "Pendientes").
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
