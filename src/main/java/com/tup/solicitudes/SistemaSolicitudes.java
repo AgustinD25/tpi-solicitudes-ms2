@@ -13,6 +13,7 @@ public class SistemaSolicitudes {
     public static final int COD_LIMITE_PENDIENTES = -2;
     public static final int COD_TIPO_INVALIDO = -3;
     public static final int COD_PRIORIDAD_INVALIDA = -4;
+    private static final int SIN_ERROR = 0;   // interno: ningun id valido es 0
 
     // Reglas de negocio
     static final int MAX_PENDIENTES_POR_ESTUDIANTE = 3;
@@ -59,6 +60,31 @@ public class SistemaSolicitudes {
 
     public int registrarSolicitud(String legajo, String nombre, String email, String tipo,
                                   String descripcion, int prioridad, boolean urgente, LocalDate fecha) {
+        int codigo = validarDatosBasicos(legajo, nombre, tipo, prioridad);
+        if (codigo != SIN_ERROR) {
+            return codigo;
+        }
+        Estudiante estudianteIngresado = new Estudiante(legajo, nombre, email);
+        if (!estudianteIngresado.emailValido()) {
+            System.out.println("Error: email invalido");
+            return COD_DATOS_INVALIDOS;
+        }
+        if (contarPendientes(legajo) >= MAX_PENDIENTES_POR_ESTUDIANTE) {
+            System.out.println("Error: el estudiante ya tiene " + MAX_PENDIENTES_POR_ESTUDIANTE
+                    + " solicitudes pendientes");
+            return COD_LIMITE_PENDIENTES;
+        }
+        Estudiante estudiante = buscarOCrearEstudiante(estudianteIngresado);
+        int prioridadFinal = calcularPrioridad(prioridad, urgente);
+        Solicitud nueva = crearSolicitud(estudiante, tipo, descripcion, prioridadFinal, urgente, fecha);
+        lst.add(nueva);
+        guardar();
+        System.out.println("Solicitud #" + nueva.id + " registrada (" + tipo + ", prioridad " + prioridadFinal + ")");
+        return nueva.id;
+    }
+
+    // Valida legajo, nombre, tipo y prioridad, en ese orden (el orden determina el codigo devuelto).
+    private int validarDatosBasicos(String legajo, String nombre, String tipo, int prioridad) {
         if (legajo == null || legajo.trim().length() == 0) {
             System.out.println("Error: legajo vacio");
             return COD_DATOS_INVALIDOS;
@@ -67,8 +93,7 @@ public class SistemaSolicitudes {
             System.out.println("Error: nombre vacio");
             return COD_DATOS_INVALIDOS;
         }
-        if (!tipo.equals("CERTIFICADO") && !tipo.equals("EQUIVALENCIA")
-                && !tipo.equals("RECLAMO_NOTA") && !tipo.equals("BAJA_MATERIA")) {
+        if (!esTipoValido(tipo)) {
             System.out.println("Error: tipo de solicitud invalido");
             return COD_TIPO_INVALIDO;
         }
@@ -76,25 +101,29 @@ public class SistemaSolicitudes {
             System.out.println("Error: prioridad fuera de rango");
             return COD_PRIORIDAD_INVALIDA;
         }
-        Estudiante estudianteIngresado = new Estudiante(legajo, nombre, email);
-        if (!estudianteIngresado.emailValido()) {
-            System.out.println("Error: email invalido");
-            return COD_DATOS_INVALIDOS;
-        }
+        return SIN_ERROR;
+    }
+
+    private boolean esTipoValido(String tipo) {
+        return tipo.equals("CERTIFICADO") || tipo.equals("EQUIVALENCIA")
+                || tipo.equals("RECLAMO_NOTA") || tipo.equals("BAJA_MATERIA");
+    }
+
+    private int contarPendientes(String legajo) {
         int pendientes = 0;
         for (Solicitud solicitud : lst) {
             if (solicitud.estudiante.legajo.equals(legajo) && solicitud.estado.equals("PENDIENTE")) {
                 pendientes++;
             }
         }
-        if (pendientes >= MAX_PENDIENTES_POR_ESTUDIANTE) {
-            System.out.println("Error: el estudiante ya tiene " + MAX_PENDIENTES_POR_ESTUDIANTE
-                    + " solicitudes pendientes");
-            return COD_LIMITE_PENDIENTES;
-        }
+        return pendientes;
+    }
+
+    // Devuelve el estudiante ya registrado con ese legajo o, si no existe, registra el ingresado.
+    private Estudiante buscarOCrearEstudiante(Estudiante estudianteIngresado) {
         Estudiante estudiante = null;
         for (Estudiante candidato : est) {
-            if (candidato.legajo.equals(legajo)) {
+            if (candidato.legajo.equals(estudianteIngresado.legajo)) {
                 estudiante = candidato;
             }
         }
@@ -102,12 +131,19 @@ public class SistemaSolicitudes {
             estudiante = estudianteIngresado;
             est.add(estudiante);
         }
-        if (urgente) {
-            prioridad = prioridad + 1;
-            if (prioridad > PRIORIDAD_MAXIMA) {
-                prioridad = PRIORIDAD_MAXIMA;
-            }
+        return estudiante;
+    }
+
+    // Una solicitud urgente sube un nivel de prioridad, con tope en PRIORIDAD_MAXIMA.
+    private int calcularPrioridad(int prioridad, boolean urgente) {
+        if (!urgente) {
+            return prioridad;
         }
+        return Math.min(prioridad + 1, PRIORIDAD_MAXIMA);
+    }
+
+    private Solicitud crearSolicitud(Estudiante estudiante, String tipo, String descripcion,
+                                     int prioridad, boolean urgente, LocalDate fecha) {
         Solicitud nueva = new Solicitud();
         ultimoId = ultimoId + 1;
         nueva.id = ultimoId;
@@ -118,10 +154,7 @@ public class SistemaSolicitudes {
         nueva.urgente = urgente;
         nueva.estado = "PENDIENTE";
         nueva.fechaCreacion = fecha;
-        lst.add(nueva);
-        guardar();
-        System.out.println("Solicitud #" + nueva.id + " registrada (" + tipo + ", prioridad " + prioridad + ")");
-        return nueva.id;
+        return nueva;
     }
 
     // ---------- estados ----------

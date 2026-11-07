@@ -159,3 +159,65 @@ if (solicitud.estaVencida(hoy)) {       // en reporte()
 - **Por qué:** la regla de vencimiento vive junto a los datos que usa. Se mantiene el comportamiento exacto,
   incluido el plazo 0 para un tipo desconocido (ver smell 4).
 - **Verificación:** `mvn test` → 49 tests, 0 fallas (incluye `plazoDeCadaTipoVenceElDiaSiguienteAlLimite`).
+
+---
+
+## R4. Extract Method en `registrarSolicitud`
+
+- **Smell que cierra:** 2 (Long Method). **Refactoring obligatorio.**
+- **Archivo:** `SistemaSolicitudes.java`.
+- **Qué se hizo:** el método de 65 líneas y complejidad ciclomática ≈ 21 se partió en pasos con nombre.
+  `registrarSolicitud` queda en 24 líneas (61–84) con 3 decisiones propias (complejidad ≈ 4).
+
+| Método extraído | Responsabilidad |
+|---|---|
+| `validarDatosBasicos` | legajo, nombre, tipo y prioridad, en el orden original (ese orden fija el código devuelto) |
+| `esTipoValido` | la lista de tipos permitidos |
+| `contarPendientes` | pendientes del estudiante |
+| `buscarOCrearEstudiante` | reutiliza el estudiante por legajo o registra el nuevo |
+| `calcularPrioridad` | regla de urgencia: sube un nivel con tope en `PRIORIDAD_MAXIMA` |
+| `crearSolicitud` | arma la entidad con estado PENDIENTE |
+
+Antes (fragmento):
+```java
+int pendientes = 0;
+for (Solicitud solicitud : lst) {
+    if (solicitud.estudiante.legajo.equals(legajo) && solicitud.estado.equals("PENDIENTE")) {
+        pendientes++;
+    }
+}
+if (pendientes >= MAX_PENDIENTES_POR_ESTUDIANTE) { ... }
+...
+if (urgente) {
+    prioridad = prioridad + 1;
+    if (prioridad > PRIORIDAD_MAXIMA) {
+        prioridad = PRIORIDAD_MAXIMA;
+    }
+}
+Solicitud nueva = new Solicitud();
+ultimoId = ultimoId + 1;
+nueva.id = ultimoId;
+... (9 asignaciones más)
+```
+
+Después:
+```java
+int codigo = validarDatosBasicos(legajo, nombre, tipo, prioridad);
+if (codigo != SIN_ERROR) {
+    return codigo;
+}
+Estudiante estudianteIngresado = new Estudiante(legajo, nombre, email);
+if (!estudianteIngresado.emailValido()) { ... }
+if (contarPendientes(legajo) >= MAX_PENDIENTES_POR_ESTUDIANTE) { ... }
+Estudiante estudiante = buscarOCrearEstudiante(estudianteIngresado);
+int prioridadFinal = calcularPrioridad(prioridad, urgente);
+Solicitud nueva = crearSolicitud(estudiante, tipo, descripcion, prioridadFinal, urgente, fecha);
+lst.add(nueva);
+guardar();
+```
+
+- **Por qué:** cada regla se puede leer, probar y cambiar por separado. El orden de las validaciones (y por lo tanto
+  el código devuelto) se preserva; lo cubre `laValidacionDeTipoVaAntesQueLaDeEmail`.
+- **Cuidado:** `SIN_ERROR = 0` es un valor interno privado; es seguro porque ningún id válido es 0 (empiezan en 1).
+- **Pendiente:** `crearSolicitud` recibe 6 parámetros; se reduce en R5 (Parameter Object).
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
