@@ -621,6 +621,61 @@ public SistemaSolicitudes(SolicitudRepository solicitudRepository, EstudianteRep
 
 ---
 
+## R12. Replace Error Code with Exception + Extract Class: servicios y fachada (Adapter)
+
+- **Smells que cierra:** 9 (manejo de errores pobre, en la lógica de negocio) y 1 (God Class). Principios: SRP,
+  DIP, Clean Code (errores con excepciones, sin salida por consola en la lógica).
+- **Archivos nuevos:** `SolicitudService`, `ResponsableService` y 10 clases de excepción (`DominioException` y sus
+  hijas: `DatosInvalidosException`, `TipoInvalidoException`, `PrioridadInvalidaException`,
+  `LimitePendientesException`, `TransicionInvalidaException`, `SolicitudNoEncontradaException`,
+  `ResponsableNoEncontradoException`, `AreaIncorrectaException`, `ResponsableInvalidoException`).
+  **Modificado:** `SistemaSolicitudes.java`, que pasa de clase dios a fachada.
+- **Qué se hizo:** las reglas de negocio (validar, límite de pendientes, prioridad, transiciones, asignación por
+  área) viven ahora en `SolicitudService` y avisan los errores con **excepciones de dominio**; no devuelven
+  códigos ni imprimen. `SistemaSolicitudes` conserva el contrato público de la versión original: atrapa las
+  excepciones, imprime el mismo mensaje y devuelve el mismo código (-1/-2/-3/-4, `false`, `null`). Es el patrón
+  Adapter entre el diseño nuevo y el contrato viejo.
+
+Antes (`SistemaSolicitudes`, regla + mensaje + código mezclados):
+```java
+if (pendientes >= MAX_PENDIENTES_POR_ESTUDIANTE) {
+    System.out.println("Error: el estudiante ya tiene " + MAX_PENDIENTES_POR_ESTUDIANTE
+            + " solicitudes pendientes");
+    return COD_LIMITE_PENDIENTES;
+}
+```
+
+Después:
+```java
+// SolicitudService: la regla informa con una excepcion, sin imprimir
+if (contarPendientes(datos.legajo()) >= MAX_PENDIENTES_POR_ESTUDIANTE) {
+    throw new LimitePendientesException(MAX_PENDIENTES_POR_ESTUDIANTE);
+}
+
+// SistemaSolicitudes (fachada): traduce al contrato de siempre
+try {
+    Solicitud nueva = solicitudService.registrar(datos);
+    System.out.println("Solicitud #" + nueva.getId() + " registrada (" + ... + ")");
+    return nueva.getId();
+} catch (DominioException error) {
+    System.out.println("Error: " + error.getMessage());
+    return codigoDeError(error);          // LimitePendientesException -> -2, TipoInvalidoException -> -3, ...
+}
+```
+
+- **Por qué la fachada:** los 49 tests de caracterización pasan **sin modificarse** porque el contrato público no
+  cambió. El diseño nuevo se puede usar desde otra interfaz (web, API) recibiendo excepciones, sin tocar la consola.
+- **Qué mejora además:** `SolicitudService` se prueba sin archivos ni consola; el orden de las validaciones sigue
+  siendo el mismo (fija cuál error se informa); `filtrar(Predicate)` reemplaza a las tres búsquedas casi iguales
+  (smell 7, parte de los filtros).
+- **Se conserva a propósito:** el `NullPointerException` con tipo o estado nulo (D2 y D5), y los errores de archivo
+  tragados en `RepositorioCsv` (D3, D4, D6 y D7), porque los tests los fijan. El smell 9 queda cerrado en la parte de
+  reglas de negocio; la parte de entrada/salida se cierra con la corrección de esos defectos.
+- **Smell 14 sigue abierto:** `cargar()` aún depende de registrar los responsables antes (ver R11).
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
