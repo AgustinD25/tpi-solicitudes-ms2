@@ -106,3 +106,56 @@ if (!transicionValida) { ... }
   (`sis.lst`, `sis.est`, `sis.resp`), que no se pueden modificar. Se dejó un comentario en el código que lo explica.
   Se cierran cuando se encapsule la clase (ver "Pendientes").
 - **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
+## R3. Move Method: `estaVencida` pasa a `Solicitud`
+
+- **Smell que cierra:** 6 (Feature Envy). **Refactoring obligatorio.**
+- **Archivos:** `Solicitud.java` (recibe el método y las constantes de plazo), `SistemaSolicitudes.java`.
+- **Qué se hizo:** `estaVencida` solo usaba `tipo`, `estado` y `fechaCreacion` de la solicitud, así que se movió
+  a la clase que tiene esos datos. En `SistemaSolicitudes` queda una delegación de una línea con la firma de
+  siempre (`estaVencida(Solicitud, LocalDate)`), porque es contrato público que usan los tests. `reporte` ahora
+  pregunta directamente a la solicitud.
+
+Antes (`SistemaSolicitudes`):
+```java
+public boolean estaVencida(Solicitud solicitud, LocalDate hoy) {
+    int plazo = 0;
+    if (solicitud.tipo.equals("CERTIFICADO")) {
+        plazo = PLAZO_CERTIFICADO;
+    } else if ...
+    if (solicitud.estado.equals("RESUELTA") || solicitud.estado.equals("RECHAZADA")) {
+        return false;
+    }
+    return hoy.isAfter(solicitud.fechaCreacion.plusDays(plazo));
+}
+...
+if (estaVencida(solicitud, hoy)) {      // en reporte()
+```
+
+Después:
+```java
+// Solicitud.java
+public boolean estaVencida(LocalDate hoy) {
+    int plazo = 0;
+    if (tipo.equals("CERTIFICADO")) {
+        plazo = PLAZO_CERTIFICADO;
+    } else if ...
+    if (estado.equals("RESUELTA") || estado.equals("RECHAZADA")) {
+        return false;
+    }
+    return hoy.isAfter(fechaCreacion.plusDays(plazo));
+}
+
+// SistemaSolicitudes.java
+public boolean estaVencida(Solicitud solicitud, LocalDate hoy) {
+    return solicitud.estaVencida(hoy);
+}
+...
+if (solicitud.estaVencida(hoy)) {       // en reporte()
+```
+
+- **Por qué:** la regla de vencimiento vive junto a los datos que usa. Se mantiene el comportamiento exacto,
+  incluido el plazo 0 para un tipo desconocido (ver smell 4).
+- **Verificación:** `mvn test` → 49 tests, 0 fallas (incluye `plazoDeCadaTipoVenceElDiaSiguienteAlLimite`).

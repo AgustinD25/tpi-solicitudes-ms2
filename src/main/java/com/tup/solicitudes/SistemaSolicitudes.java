@@ -18,10 +18,6 @@ public class SistemaSolicitudes {
     static final int MAX_PENDIENTES_POR_ESTUDIANTE = 3;
     static final int PRIORIDAD_MINIMA = 1;
     static final int PRIORIDAD_MAXIMA = 3;
-    static final int PLAZO_CERTIFICADO = 5;
-    static final int PLAZO_EQUIVALENCIA = 30;
-    static final int PLAZO_RECLAMO_NOTA = 10;
-    static final int PLAZO_BAJA_MATERIA = 7;
 
     // Formato del CSV: valor de la columna "responsable" cuando no hay uno asignado
     static final int ID_SIN_RESPONSABLE = -1;
@@ -242,21 +238,9 @@ public class SistemaSolicitudes {
 
     // ---------- vencimientos ----------
 
+    // Se conserva en la clase como delegacion: es parte del contrato publico que usan los tests.
     public boolean estaVencida(Solicitud solicitud, LocalDate hoy) {
-        int plazo = 0;
-        if (solicitud.tipo.equals("CERTIFICADO")) {
-            plazo = PLAZO_CERTIFICADO;
-        } else if (solicitud.tipo.equals("EQUIVALENCIA")) {
-            plazo = PLAZO_EQUIVALENCIA;
-        } else if (solicitud.tipo.equals("RECLAMO_NOTA")) {
-            plazo = PLAZO_RECLAMO_NOTA;
-        } else if (solicitud.tipo.equals("BAJA_MATERIA")) {
-            plazo = PLAZO_BAJA_MATERIA;
-        }
-        if (solicitud.estado.equals("RESUELTA") || solicitud.estado.equals("RECHAZADA")) {
-            return false;
-        }
-        return hoy.isAfter(solicitud.fechaCreacion.plusDays(plazo));
+        return solicitud.estaVencida(hoy);
     }
 
     // ---------- reporte ----------
@@ -299,7 +283,7 @@ public class SistemaSolicitudes {
         sb.append("Vencidas:\n");
         int cantidadVencidas = 0;
         for (Solicitud solicitud : lst) {
-            if (estaVencida(solicitud, hoy)) {
+            if (solicitud.estaVencida(hoy)) {
                 sb.append("  #").append(solicitud.id).append(" ").append(solicitud.tipo)
                   .append(" (").append(solicitud.estudiante.legajo).append(") creada ")
                   .append(solicitud.fechaCreacion).append("\n");
