@@ -141,10 +141,13 @@ class DefectosLatentesCaracterizacionTest {
         assertEquals(1, recargado.getSolicitudes().size());
     }
 
-    // ---------- D7: cargar() no es idempotente ----------
+    // ---------- D7: cargar() es idempotente ----------
 
+    // CAMBIO DELIBERADO (correccion del defecto D7): antes se llamaba d7_cargarDosVecesDuplicaLasSolicitudes
+    // y exigia que cargar() dos veces dejara 2 solicitudes con el mismo id. Ahora cargar() reemplaza lo que hay
+    // en memoria por lo que dice el archivo, asi que repetirlo no cambia nada.
     @Test
-    void d7_cargarDosVecesDuplicaLasSolicitudes() {
+    void d7_cargarDosVecesDejaLoMismoQueCargarUnaVez() {
         Path archivo = csv("d7.csv");
         SistemaSolicitudes original = new SistemaSolicitudes(archivo.toString());
         original.registrarSolicitud("L1", "Ana", "a@b.com", "CERTIFICADO", "ok", 1, false, FECHA);
@@ -153,10 +156,11 @@ class DefectosLatentesCaracterizacionTest {
         sis.cargar();
         sis.cargar();
 
-        assertEquals(2, sis.getSolicitudes().size());
+        assertEquals(1, sis.getSolicitudes().size());
         assertEquals(1, sis.getSolicitudes().get(0).getId());
-        assertEquals(1, sis.getSolicitudes().get(1).getId());          // mismo id repetido
-        assertEquals(1, sis.getEstudiantes().size());             // el estudiante si se reutiliza
+        assertEquals(1, sis.getEstudiantes().size());
+        // y los ids siguen donde corresponde
+        assertEquals(2, sis.registrarSolicitud("L2", "Beto", "b@b.com", "CERTIFICADO", "ok", 1, false, FECHA));
     }
 
     // ---------- Smell 14: acoplamiento temporal ----------

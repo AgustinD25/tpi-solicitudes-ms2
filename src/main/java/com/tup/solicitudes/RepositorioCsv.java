@@ -1,6 +1,7 @@
 package com.tup.solicitudes;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.time.LocalDate;
@@ -55,8 +56,16 @@ public class RepositorioCsv extends RepositorioEnMemoria {
         }
     }
 
+    /**
+     * Reemplaza lo que hay en memoria por el contenido del archivo, por lo que llamarlo varias veces da el mismo
+     * resultado. Si el archivo todavia no existe (primera ejecucion) no hace nada.
+     */
     @Override
     public void cargar() {
+        if (!new File(rutaArchivo).isFile()) {
+            return;
+        }
+        vaciar();
         try {
             BufferedReader lector = new BufferedReader(new FileReader(rutaArchivo));
             String linea;

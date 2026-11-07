@@ -51,3 +51,17 @@ Cada entrada dice: qué pasaba, qué pasa ahora, qué test cambió y por qué es
   guardar la salida de consola en un campo (antes la descartaba).
 - **Por qué mejora:** mismo criterio que D2: los datos inválidos se informan, no rompen. Además elimina la
   irregularidad entre estados abiertos y cerrados.
+
+---
+
+## D7. `cargar()` no era idempotente: llamarlo dos veces duplicaba las solicitudes
+
+- **Antes:** `cargar()` agregaba lo leído a lo que ya había en memoria. Con un archivo de 1 solicitud, dos
+  llamadas dejaban 2 solicitudes con el mismo id 1.
+- **Ahora:** `cargar()` reemplaza lo que hay en memoria por el contenido del archivo, así que repetirlo da el mismo
+  resultado y los ids siguen en el valor correcto. Si el archivo todavía no existe (primera ejecución) no hace nada y no
+  borra lo que hubiera en memoria.
+- **Código:** `RepositorioCsv.cargar` y un método `vaciar()` protegido en `RepositorioEnMemoria`.
+- **Test cambiado:** `d7_cargarDosVecesDuplicaLasSolicitudes` → `d7_cargarDosVecesDejaLoMismoQueCargarUnaVez`.
+- **Por qué mejora:** una operación de carga no debería poder corromper los datos por repetirse; también evita ids
+  duplicados, que rompían la búsqueda por id.

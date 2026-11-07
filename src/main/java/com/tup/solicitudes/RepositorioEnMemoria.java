@@ -67,6 +67,13 @@ public class RepositorioEnMemoria implements SolicitudRepository, EstudianteRepo
         estudiantes.add(estudiante);
     }
 
+    /** Para las subclases que releen su almacenamiento: descarta lo que hay en memoria y reinicia los ids. */
+    protected void vaciar() {
+        solicitudes.clear();
+        estudiantes.clear();
+        ultimoId = 0;
+    }
+
     /** Para las subclases que leen de un archivo: agrega una solicitud ya existente y avanza el contador de ids. */
     protected void incorporar(Solicitud cargada) {
         solicitudes.add(cargada);
