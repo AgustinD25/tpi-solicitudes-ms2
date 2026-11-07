@@ -18,6 +18,42 @@ public class Solicitud {
     public Responsable responsable;
     public LocalDate fechaCreacion;
 
+    public int getId() {
+        return id;
+    }
+
+    public Estudiante getEstudiante() {
+        return estudiante;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public String getDescripcion() {
+        return descripcion;
+    }
+
+    public int getPrioridad() {
+        return prioridad;
+    }
+
+    public boolean isUrgente() {
+        return urgente;
+    }
+
+    public String getEstado() {
+        return estado;
+    }
+
+    public Responsable getResponsable() {
+        return responsable;
+    }
+
+    public LocalDate getFechaCreacion() {
+        return fechaCreacion;
+    }
+
     public boolean estaVencida(LocalDate hoy) {
         int plazo = 0;
         if (tipo.equals("CERTIFICADO")) {

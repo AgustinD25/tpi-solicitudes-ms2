@@ -13,6 +13,22 @@ public class Responsable {
         this.area = area;
     }
 
+    public int getId() {
+        return id;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getArea() {
+        return area;
+    }
+
     public boolean emailValido() {
         if (email == null) {
             return false;

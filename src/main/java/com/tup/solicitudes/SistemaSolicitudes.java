@@ -34,6 +34,19 @@ public class SistemaSolicitudes {
         this.rutaArchivo = rutaArchivo;
     }
 
+    // Las listas se exponen como copias no modificables: quien las lee no puede alterar el estado interno.
+    public List<Solicitud> getSolicitudes() {
+        return List.copyOf(lst);
+    }
+
+    public List<Estudiante> getEstudiantes() {
+        return List.copyOf(est);
+    }
+
+    public List<Responsable> getResponsables() {
+        return List.copyOf(resp);
+    }
+
     // ---------- responsables ----------
 
     public Responsable registrarResponsable(int id, String nombre, String email, String area) {

@@ -11,6 +11,18 @@ public class Estudiante {
         this.email = email;
     }
 
+    public String getLegajo() {
+        return legajo;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
     public boolean emailValido() {
         if (email == null) {
             return false;
