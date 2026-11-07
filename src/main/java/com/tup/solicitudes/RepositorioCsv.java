@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -14,19 +15,21 @@ import java.util.function.Function;
  *
  * Los responsables no se guardan en el archivo, solo su id; al cargar se resuelven con la funcion recibida.
  *
- * ATENCION: el manejo de errores de guardar() y cargar() (catch vacio, archivo que no se cierra si falla,
- * archivo truncado) es el de la version original y se conserva A PROPOSITO porque los tests de caracterizacion
- * lo fijan (defectos D3, D4, D6 y D7). Se corrige despues del refactoring, un defecto por commit.
+ * Si no se puede leer o escribir el archivo, el repositorio NO lanza excepciones ni se queda callado: informa el
+ * problema con la funcion {@code avisarError} y las operaciones siguen funcionando en memoria.
  */
 public class RepositorioCsv extends RepositorioEnMemoria {
     static final int ID_SIN_RESPONSABLE = -1;
 
     private final String rutaArchivo;
     private final Function<Integer, Responsable> buscarResponsable;
+    private final Consumer<String> avisarError;
 
-    public RepositorioCsv(String rutaArchivo, Function<Integer, Responsable> buscarResponsable) {
+    public RepositorioCsv(String rutaArchivo, Function<Integer, Responsable> buscarResponsable,
+                          Consumer<String> avisarError) {
         this.rutaArchivo = rutaArchivo;
         this.buscarResponsable = buscarResponsable;
+        this.avisarError = avisarError;
     }
 
     @Override
@@ -52,7 +55,7 @@ public class RepositorioCsv extends RepositorioEnMemoria {
         try (FileWriter escritor = new FileWriter(rutaArchivo)) {
             escritor.write(contenido.toString());
         } catch (IOException ex) {
-            // Pendiente: los errores de escritura todavia se ignoran (defecto D3, se corrige en el commit siguiente).
+            avisarError.accept("no se pudo guardar el archivo " + rutaArchivo + ": " + ex.getMessage());
         }
     }
 
@@ -77,8 +80,7 @@ public class RepositorioCsv extends RepositorioEnMemoria {
             return;
         }
         vaciar();
-        try {
-            BufferedReader lector = new BufferedReader(new FileReader(rutaArchivo));
+        try (BufferedReader lector = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
             while ((linea = lector.readLine()) != null) {
                 String[] campos = linea.split(";");
@@ -104,8 +106,8 @@ public class RepositorioCsv extends RepositorioEnMemoria {
                 solicitud.restaurar(estado, responsable);
                 incorporar(solicitud);
             }
-            lector.close();
         } catch (Exception ex) {
+            avisarError.accept("no se pudo leer el archivo " + rutaArchivo + ": " + ex);
         }
     }
 }

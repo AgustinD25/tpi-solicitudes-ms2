@@ -615,15 +615,19 @@ class SistemaSolicitudesCaracterizacionTest {
         assertEquals(1, enMemoria.getSolicitudes().size());
     }
 
+    // CAMBIO DELIBERADO (correccion del defecto D3): antes se llamaba
+    // siNoSePuedeEscribirElArchivoElErrorSeTragaEnSilencio y no exigia ningun aviso (el catch vacio lo ocultaba).
+    // Ahora el error de escritura se informa por consola; el registro sigue funcionando en memoria.
     @Test
-    void siNoSePuedeEscribirElArchivoElErrorSeTragaEnSilencio() {
-        // la ruta apunta a un directorio existente: FileWriter falla y el catch vacio lo oculta
+    void siNoSePuedeEscribirElArchivoSeAvisaPeroElRegistroSigueEnMemoria() {
+        // la ruta apunta a un directorio existente: FileWriter no puede abrirlo como archivo
         SistemaSolicitudes malo = new SistemaSolicitudes(tmp.toString());
 
         int id = malo.registrarSolicitud("L001", "Ana", "a@b.com", "CERTIFICADO", "d", 1, false, HOY);
 
         assertEquals(1, id);
         assertEquals(1, malo.getSolicitudes().size());
+        assertTrue(consola().contains("Error: no se pudo guardar el archivo " + tmp));
     }
 
 }

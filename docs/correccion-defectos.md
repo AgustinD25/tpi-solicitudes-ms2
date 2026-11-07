@@ -83,3 +83,21 @@ Cada entrada dice: qué pasaba, qué pasa ahora, qué test cambió y por qué es
 - **Por qué mejora:** el peor efecto del smell de los `catch` vacíos era este: un dato de entrada raro destruía datos
   ya guardados sin ningún aviso. Además desaparece la fuga del archivo abierto (por la que los tests tuvieron que
   limpiar el directorio temporal a mano en Windows).
+
+---
+
+## D3. Los errores de lectura y escritura del CSV se perdían en silencio
+
+- **Antes:** `guardar()` y `cargar()` tenían un `catch (Exception) {}` vacío. Si el archivo no se podía escribir (ruta
+  inválida, disco lleno, permisos), el registro devolvía un id válido y el usuario creía que sus datos estaban
+  guardados.
+- **Ahora:** `RepositorioCsv` informa el problema con una función que recibe al construirse. La fachada la conecta con
+  la consola: `Error: no se pudo guardar el archivo <ruta>: <causa>` (y `no se pudo leer ...` al cargar). La operación
+  sigue funcionando en memoria. El repositorio no depende de la consola: solo recibe un `Consumer<String>`.
+- **Código:** `RepositorioCsv` (constructor con `avisarError`, `escribir`, `cargar`) y `SistemaSolicitudes.crearRepositorio`.
+  `cargar()` también pasó a `try-with-resources`.
+- **Test cambiado:** `siNoSePuedeEscribirElArchivoElErrorSeTragaEnSilencio` →
+  `siNoSePuedeEscribirElArchivoSeAvisaPeroElRegistroSigueEnMemoria`. Mantiene que el id y la memoria están bien, y suma
+  que el mensaje de error aparece.
+- **Por qué mejora:** un error de persistencia deja de ser invisible. Se decidió avisar y no abortar el registro, para no
+  perder la solicitud que ya está en memoria.

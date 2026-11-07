@@ -53,7 +53,8 @@ public class SistemaSolicitudes {
         if (rutaArchivo == null) {
             return new RepositorioEnMemoria();
         }
-        return new RepositorioCsv(rutaArchivo, id -> responsables.buscarPorId(id).orElse(null));
+        return new RepositorioCsv(rutaArchivo, id -> responsables.buscarPorId(id).orElse(null),
+                mensaje -> System.out.println("Error: " + mensaje));
     }
 
     // Las listas se exponen como copias no modificables: quien las lee no puede alterar el estado interno.
