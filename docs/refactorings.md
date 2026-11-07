@@ -525,6 +525,51 @@ sis.imprimirLista(sis.getSolicitudes());
 
 ---
 
+## R10. Extract Class: `ReporteService` y `PresentadorSolicitud`
+
+- **Smell que cierra (parcialmente):** 1 (God Class). Principio: SRP.
+- **Archivos:** `ReporteService.java` y `PresentadorSolicitud.java` (nuevos), `SistemaSolicitudes.java`.
+- **Qué se hizo:** la lógica del reporte (conteos por estado y tipo y listado de vencidas) y el formato de una
+  solicitud en una línea salieron de la clase dios. Ambas clases solo **devuelven texto**: la impresión por consola
+  queda en la fachada.
+
+Antes (`SistemaSolicitudes`, ~50 líneas armando el reporte e imprimiéndolo):
+```java
+public String reporte(LocalDate hoy) {
+    Map<EstadoSolicitud, Integer> porEstado = new EnumMap<>(EstadoSolicitud.class);
+    ...
+    StringBuilder sb = new StringBuilder();
+    sb.append("=== REPORTE ===\n");
+    ...
+    String texto = sb.toString();
+    System.out.print(texto);
+    return texto;
+}
+public void imprimir(Solicitud solicitud) {
+    String nombreResponsable = ...;
+    System.out.println("#" + solicitud.getId() + " | " + ... );
+}
+```
+
+Después:
+```java
+public String reporte(LocalDate hoy) {
+    String texto = reporteService.generar(solicitudes, hoy);
+    System.out.print(texto);
+    return texto;
+}
+public void imprimir(Solicitud solicitud) {
+    System.out.println(presentador.formatear(solicitud));
+}
+```
+
+- **Por qué:** `ReporteService.generar(List<Solicitud>, LocalDate)` es una función pura (recibe datos y fecha, devuelve
+  texto): se puede probar y reutilizar desde otra interfaz sin que aparezca salida por consola. Cambiar el formato
+  del reporte ya no obliga a abrir la clase que registra solicitudes.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |

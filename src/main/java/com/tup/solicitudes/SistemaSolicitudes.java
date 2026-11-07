@@ -5,9 +5,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class SistemaSolicitudes {
@@ -30,6 +28,8 @@ public class SistemaSolicitudes {
     private final List<Estudiante> estudiantes = new ArrayList<>();
     private final List<Responsable> responsables = new ArrayList<>();
     private int ultimoId = 0;
+    private final ReporteService reporteService = new ReporteService();
+    private final PresentadorSolicitud presentador = new PresentadorSolicitud();
     private final String rutaArchivo;
 
     public SistemaSolicitudes(String rutaArchivo) {
@@ -269,42 +269,7 @@ public class SistemaSolicitudes {
     // ---------- reporte ----------
 
     public String reporte(LocalDate hoy) {
-        Map<EstadoSolicitud, Integer> porEstado = new EnumMap<>(EstadoSolicitud.class);
-        for (EstadoSolicitud estado : EstadoSolicitud.values()) {
-            porEstado.put(estado, 0);
-        }
-        Map<TipoSolicitud, Integer> porTipo = new EnumMap<>(TipoSolicitud.class);
-        for (TipoSolicitud tipo : TipoSolicitud.values()) {
-            porTipo.put(tipo, 0);
-        }
-        for (Solicitud solicitud : solicitudes) {
-            porEstado.merge(solicitud.getEstadoSolicitud(), 1, Integer::sum);
-            porTipo.merge(solicitud.getTipoSolicitud(), 1, Integer::sum);
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== REPORTE ===\n");
-        sb.append("Por estado:\n");
-        for (EstadoSolicitud estado : EstadoSolicitud.values()) {
-            sb.append("  ").append(estado).append(": ").append(porEstado.get(estado)).append("\n");
-        }
-        sb.append("Por tipo:\n");
-        for (TipoSolicitud tipo : TipoSolicitud.values()) {
-            sb.append("  ").append(tipo).append(": ").append(porTipo.get(tipo)).append("\n");
-        }
-        sb.append("Vencidas:\n");
-        int cantidadVencidas = 0;
-        for (Solicitud solicitud : solicitudes) {
-            if (solicitud.estaVencida(hoy)) {
-                sb.append("  #").append(solicitud.getId()).append(" ").append(solicitud.getTipo())
-                  .append(" (").append(solicitud.getEstudiante().getLegajo()).append(") creada ")
-                  .append(solicitud.getFechaCreacion()).append("\n");
-                cantidadVencidas++;
-            }
-        }
-        if (cantidadVencidas == 0) {
-            sb.append("  (ninguna)\n");
-        }
-        String texto = sb.toString();
+        String texto = reporteService.generar(solicitudes, hoy);
         System.out.print(texto);
         return texto;
     }
@@ -312,14 +277,7 @@ public class SistemaSolicitudes {
     // ---------- impresion ----------
 
     public void imprimir(Solicitud solicitud) {
-        String nombreResponsable = solicitud.getResponsable() == null
-                ? "sin asignar" : solicitud.getResponsable().getNombre();
-        System.out.println("#" + solicitud.getId() + " | " + solicitud.getEstudiante().getLegajo()
-                + " " + solicitud.getEstudiante().getNombre()
-                + " | " + solicitud.getTipo() + " | prioridad " + solicitud.getPrioridad()
-                + (solicitud.isUrgente() ? " (urgente)" : "")
-                + " | " + solicitud.getEstado() + " | " + nombreResponsable
-                + " | " + solicitud.getFechaCreacion());
+        System.out.println(presentador.formatear(solicitud));
     }
 
     public void imprimirLista(List<Solicitud> listado) {
