@@ -5,7 +5,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 public class SistemaSolicitudes {
     // Codigos de retorno de registrarSolicitud (contrato publico que se mantiene)
@@ -112,7 +114,7 @@ public class SistemaSolicitudes {
             System.out.println("Error: nombre vacio");
             return COD_DATOS_INVALIDOS;
         }
-        if (!esTipoValido(datos.tipo())) {
+        if (TipoSolicitud.desde(datos.tipo()) == null) {
             System.out.println("Error: tipo de solicitud invalido");
             return COD_TIPO_INVALIDO;
         }
@@ -121,11 +123,6 @@ public class SistemaSolicitudes {
             return COD_PRIORIDAD_INVALIDA;
         }
         return SIN_ERROR;
-    }
-
-    private boolean esTipoValido(String tipo) {
-        return tipo.equals("CERTIFICADO") || tipo.equals("EQUIVALENCIA")
-                || tipo.equals("RECLAMO_NOTA") || tipo.equals("BAJA_MATERIA");
     }
 
     private int contarPendientes(String legajo) {
@@ -166,7 +163,7 @@ public class SistemaSolicitudes {
         ultimoId = ultimoId + 1;
         nueva.id = ultimoId;
         nueva.estudiante = estudiante;
-        nueva.tipo = datos.tipo();
+        nueva.tipo = TipoSolicitud.desde(datos.tipo());
         nueva.descripcion = datos.descripcion();
         nueva.prioridad = prioridadFinal;
         nueva.urgente = datos.urgente();
@@ -225,16 +222,7 @@ public class SistemaSolicitudes {
             System.out.println("Error: no existe el responsable " + idResponsable);
             return false;
         }
-        String areaRequerida = null;
-        if (solicitud.tipo.equals("CERTIFICADO")) {
-            areaRequerida = "Alumnado";
-        } else if (solicitud.tipo.equals("EQUIVALENCIA")) {
-            areaRequerida = "Academica";
-        } else if (solicitud.tipo.equals("RECLAMO_NOTA")) {
-            areaRequerida = "Docencia";
-        } else if (solicitud.tipo.equals("BAJA_MATERIA")) {
-            areaRequerida = "Alumnado";
-        }
+        String areaRequerida = solicitud.tipo.getAreaResponsable();
         if (!responsable.area.equals(areaRequerida)) {
             System.out.println("Error: el responsable es del area " + responsable.area
                     + " y la solicitud requiere " + areaRequerida);
@@ -270,7 +258,7 @@ public class SistemaSolicitudes {
     public List<Solicitud> filtrarPorTipo(String tipo) {
         List<Solicitud> resultado = new ArrayList<>();
         for (Solicitud solicitud : lst) {
-            if (solicitud.tipo.equals(tipo)) {
+            if (solicitud.getTipo().equals(tipo)) {
                 resultado.add(solicitud);
             }
         }
@@ -298,7 +286,10 @@ public class SistemaSolicitudes {
 
     public String reporte(LocalDate hoy) {
         int pendientes = 0, enProceso = 0, resueltas = 0, rechazadas = 0;
-        int certificados = 0, equivalencias = 0, reclamosNota = 0, bajasMateria = 0;
+        Map<TipoSolicitud, Integer> porTipo = new EnumMap<>(TipoSolicitud.class);
+        for (TipoSolicitud tipo : TipoSolicitud.values()) {
+            porTipo.put(tipo, 0);
+        }
         for (Solicitud solicitud : lst) {
             if (solicitud.estado.equals("PENDIENTE")) {
                 pendientes++;
@@ -309,15 +300,7 @@ public class SistemaSolicitudes {
             } else if (solicitud.estado.equals("RECHAZADA")) {
                 rechazadas++;
             }
-            if (solicitud.tipo.equals("CERTIFICADO")) {
-                certificados++;
-            } else if (solicitud.tipo.equals("EQUIVALENCIA")) {
-                equivalencias++;
-            } else if (solicitud.tipo.equals("RECLAMO_NOTA")) {
-                reclamosNota++;
-            } else if (solicitud.tipo.equals("BAJA_MATERIA")) {
-                bajasMateria++;
-            }
+            porTipo.merge(solicitud.tipo, 1, Integer::sum);
         }
         StringBuilder sb = new StringBuilder();
         sb.append("=== REPORTE ===\n");
@@ -327,10 +310,9 @@ public class SistemaSolicitudes {
         sb.append("  RESUELTA: ").append(resueltas).append("\n");
         sb.append("  RECHAZADA: ").append(rechazadas).append("\n");
         sb.append("Por tipo:\n");
-        sb.append("  CERTIFICADO: ").append(certificados).append("\n");
-        sb.append("  EQUIVALENCIA: ").append(equivalencias).append("\n");
-        sb.append("  RECLAMO_NOTA: ").append(reclamosNota).append("\n");
-        sb.append("  BAJA_MATERIA: ").append(bajasMateria).append("\n");
+        for (TipoSolicitud tipo : TipoSolicitud.values()) {
+            sb.append("  ").append(tipo).append(": ").append(porTipo.get(tipo)).append("\n");
+        }
         sb.append("Vencidas:\n");
         int cantidadVencidas = 0;
         for (Solicitud solicitud : lst) {
@@ -410,7 +392,10 @@ public class SistemaSolicitudes {
                     est.add(estudiante);
                 }
                 solicitud.estudiante = estudiante;
-                solicitud.tipo = campos[4];
+                solicitud.tipo = TipoSolicitud.desde(campos[4]);
+                if (solicitud.tipo == null) {
+                    throw new IllegalArgumentException("tipo desconocido en el archivo: " + campos[4]);
+                }
                 solicitud.descripcion = campos[5];
                 solicitud.prioridad = Integer.parseInt(campos[6]);
                 solicitud.urgente = Boolean.parseBoolean(campos[7]);

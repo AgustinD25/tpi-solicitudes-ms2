@@ -318,6 +318,59 @@ public List<Solicitud> getSolicitudes() { return List.copyOf(lst); }   // copia 
 
 ---
 
+## R6. Replace Type Code with Enum + Replace Conditional with Polymorphism: `TipoSolicitud`
+
+- **Smell que cierra:** 4 (Switch sobre tipo / Shotgun Surgery). Principio: OCP.
+- **Archivos:** `TipoSolicitud.java` (nuevo), `Solicitud.java`, `SistemaSolicitudes.java`.
+- **Qué se hizo:** el conocimiento de cada tipo (plazo y área que lo atiende) pasó de cuatro cadenas if/else
+  repartidas a atributos del enum. `Solicitud.tipo` es ahora un `TipoSolicitud`; `getTipo()` sigue devolviendo
+  `String` (el nombre) y se agregó `getTipoSolicitud()` para el código nuevo.
+
+Antes (había cuatro copias de este patrón: validación, área, plazo, conteo del reporte):
+```java
+if (!tipo.equals("CERTIFICADO") && !tipo.equals("EQUIVALENCIA")
+        && !tipo.equals("RECLAMO_NOTA") && !tipo.equals("BAJA_MATERIA")) { ... }
+...
+String areaRequerida = null;
+if (solicitud.tipo.equals("CERTIFICADO")) {
+    areaRequerida = "Alumnado";
+} else if (solicitud.tipo.equals("EQUIVALENCIA")) {
+    areaRequerida = "Academica";
+} else if ...
+...
+int certificados = 0, equivalencias = 0, reclamosNota = 0, bajasMateria = 0;
+```
+
+Después:
+```java
+public enum TipoSolicitud {
+    CERTIFICADO(5, "Alumnado"),
+    EQUIVALENCIA(30, "Academica"),
+    RECLAMO_NOTA(10, "Docencia"),
+    BAJA_MATERIA(7, "Alumnado");
+    ...
+}
+
+if (TipoSolicitud.desde(datos.tipo()) == null) { ... }
+String areaRequerida = solicitud.tipo.getAreaResponsable();
+return hoy.isAfter(fechaCreacion.plusDays(tipo.getPlazoDias()));
+Map<TipoSolicitud, Integer> porTipo = new EnumMap<>(TipoSolicitud.class);   // reporte
+```
+
+- **Por qué:** agregar un tipo nuevo ahora es agregar **una constante**; antes había que editar cuatro lugares y el
+  compilador no avisaba si se olvidaba uno (con un tipo desconocido, `estaVencida` usaba plazo 0). Las constantes
+  `PLAZO_*` de `Solicitud` desaparecen: viven en el enum. El reporte recorre `TipoSolicitud.values()`, así que un
+  tipo nuevo aparece solo.
+- **Comportamiento conservado a propósito:** `desde` distingue mayúsculas (`"certificado"` sigue siendo inválido,
+  código -3) y lanza `NullPointerException` con `null`, igual que la versión original (defecto D2, fijado por
+  `tipoNuloLanzaNullPointerException`).
+- **Diferencia mínima, solo para archivos manipulados a mano:** si el CSV trae un tipo que no existe, `cargar()`
+  ahora deja de leer en esa línea (como ya hacía con cualquier línea corrupta) en vez de cargar una solicitud con
+  un tipo inválido. Con archivos escritos por el sistema no cambia nada.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
