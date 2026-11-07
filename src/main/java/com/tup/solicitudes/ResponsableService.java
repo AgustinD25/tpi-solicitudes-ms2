@@ -9,13 +9,13 @@ public class ResponsableService {
     private final List<Responsable> responsables = new ArrayList<>();
 
     public Responsable registrar(int id, String nombre, String email, String area) {
-        Responsable responsable = new Responsable(id, nombre, email, area);
-        if (!responsable.emailValido()) {
+        if (!ValidadorEmail.esValido(email)) {
             throw new ResponsableInvalidoException("email de responsable invalido");
         }
         if (!area.equals("Alumnado") && !area.equals("Academica") && !area.equals("Docencia")) {
             throw new ResponsableInvalidoException("area invalida");
         }
+        Responsable responsable = new Responsable(id, nombre, email, area);
         responsables.add(responsable);
         return responsable;
     }

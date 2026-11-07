@@ -676,12 +676,50 @@ try {
 
 ---
 
+## R13. Extract Class: `ValidadorEmail` (validación única)
+
+- **Smell que cierra:** 7 (código duplicado). Principio: DRY.
+- **Archivos:** `ValidadorEmail.java` (nuevo), `Estudiante.java`, `Responsable.java`, `SolicitudService.java`,
+  `ResponsableService.java`.
+- **Qué se hizo:** `emailValido()` estaba copiado idéntico (17 líneas) en `Estudiante` y `Responsable`. Pasó a una sola
+  clase y las entidades quedaron como datos puros. Los servicios validan **antes** de crear el objeto, así que
+  ya no se arma un `Estudiante` o `Responsable` para después descartarlo si el email es inválido.
+
+Antes:
+```java
+// Estudiante.java y Responsable.java (copias idénticas)
+public boolean emailValido() {
+    if (email == null) { return false; }
+    int arroba = email.indexOf('@');
+    ...
+}
+Estudiante estudianteIngresado = new Estudiante(legajo, nombre, email);
+if (!estudianteIngresado.emailValido()) { ... }
+```
+
+Después:
+```java
+public final class ValidadorEmail {
+    public static boolean esValido(String email) { ... }      // una sola copia
+}
+if (!ValidadorEmail.esValido(datos.email())) {
+    throw new DatosInvalidosException("email invalido");
+}
+```
+
+- **Por qué:** una regla cambiada en un solo lugar no puede dejar a estudiantes y responsables validándose distinto.
+  La duplicación de las tres búsquedas por filtro ya se había resuelto en R12 con `filtrar(Predicate)`.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas (incluye `emailInvalidoEnVariasFormas`, que prueba 8 emails).
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
 |---|---|---|
 | 8, 10, 6, 2, 3 | Cerrados (R1 a R5, R9) | |
 | 4, 5, 13 | Cerrados (R6 a R9) | Posibles gracias a la excepción E1 |
-| 7 (duplicación de `emailValido` y de las búsquedas) | Pendiente | |
-| 9 (errores), 11 (DIP), 14 (acoplamiento temporal), 1 (God Class) | Pendientes | Van juntos: repositorio + excepciones de dominio + fachada |
+| 7, 11, 1 | Cerrados (R10 a R13) | |
+| 9 (errores) | Cerrado en la lógica de negocio (R12) | Los errores de archivo siguen tragados a propósito (D3, D4, D6, D7) |
+| 14 (acoplamiento temporal) | **Abierto** | Se cierra con la corrección del defecto: `cargar()` antes de registrar responsables |
 | 12 (ISP/LSP en la exportación) | Pendiente | Requiere reescribir `ExportacionCaracterizacionTest` a propósito (ver `CLAUDE.md`) |

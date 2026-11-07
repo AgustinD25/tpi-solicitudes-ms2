@@ -22,22 +22,4 @@ public class Estudiante {
     public String getEmail() {
         return email;
     }
-
-    public boolean emailValido() {
-        if (email == null) {
-            return false;
-        }
-        int arroba = email.indexOf('@');
-        if (arroba <= 0) {
-            return false;
-        }
-        int punto = email.indexOf('.', arroba);
-        if (punto < arroba + 2 || punto == email.length() - 1) {
-            return false;
-        }
-        if (email.contains(" ")) {
-            return false;
-        }
-        return true;
-    }
 }

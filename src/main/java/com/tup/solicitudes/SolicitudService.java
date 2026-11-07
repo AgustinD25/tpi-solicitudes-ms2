@@ -27,10 +27,10 @@ public class SolicitudService {
 
     public Solicitud registrar(NuevaSolicitud datos) {
         validarDatosBasicos(datos);
-        Estudiante estudianteIngresado = new Estudiante(datos.legajo(), datos.nombre(), datos.email());
-        if (!estudianteIngresado.emailValido()) {
+        if (!ValidadorEmail.esValido(datos.email())) {
             throw new DatosInvalidosException("email invalido");
         }
+        Estudiante estudianteIngresado = new Estudiante(datos.legajo(), datos.nombre(), datos.email());
         if (contarPendientes(datos.legajo()) >= MAX_PENDIENTES_POR_ESTUDIANTE) {
             throw new LimitePendientesException(MAX_PENDIENTES_POR_ESTUDIANTE);
         }
