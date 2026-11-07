@@ -60,44 +60,50 @@ public class SistemaSolicitudes {
 
     public int registrarSolicitud(String legajo, String nombre, String email, String tipo,
                                   String descripcion, int prioridad, boolean urgente, LocalDate fecha) {
-        int codigo = validarDatosBasicos(legajo, nombre, tipo, prioridad);
+        return registrarSolicitud(new NuevaSolicitud(legajo, nombre, email, tipo, descripcion,
+                prioridad, urgente, fecha));
+    }
+
+    public int registrarSolicitud(NuevaSolicitud datos) {
+        int codigo = validarDatosBasicos(datos);
         if (codigo != SIN_ERROR) {
             return codigo;
         }
-        Estudiante estudianteIngresado = new Estudiante(legajo, nombre, email);
+        Estudiante estudianteIngresado = new Estudiante(datos.legajo(), datos.nombre(), datos.email());
         if (!estudianteIngresado.emailValido()) {
             System.out.println("Error: email invalido");
             return COD_DATOS_INVALIDOS;
         }
-        if (contarPendientes(legajo) >= MAX_PENDIENTES_POR_ESTUDIANTE) {
+        if (contarPendientes(datos.legajo()) >= MAX_PENDIENTES_POR_ESTUDIANTE) {
             System.out.println("Error: el estudiante ya tiene " + MAX_PENDIENTES_POR_ESTUDIANTE
                     + " solicitudes pendientes");
             return COD_LIMITE_PENDIENTES;
         }
         Estudiante estudiante = buscarOCrearEstudiante(estudianteIngresado);
-        int prioridadFinal = calcularPrioridad(prioridad, urgente);
-        Solicitud nueva = crearSolicitud(estudiante, tipo, descripcion, prioridadFinal, urgente, fecha);
+        int prioridadFinal = calcularPrioridad(datos.prioridad(), datos.urgente());
+        Solicitud nueva = crearSolicitud(estudiante, datos, prioridadFinal);
         lst.add(nueva);
         guardar();
-        System.out.println("Solicitud #" + nueva.id + " registrada (" + tipo + ", prioridad " + prioridadFinal + ")");
+        System.out.println("Solicitud #" + nueva.id + " registrada (" + datos.tipo()
+                + ", prioridad " + prioridadFinal + ")");
         return nueva.id;
     }
 
     // Valida legajo, nombre, tipo y prioridad, en ese orden (el orden determina el codigo devuelto).
-    private int validarDatosBasicos(String legajo, String nombre, String tipo, int prioridad) {
-        if (legajo == null || legajo.trim().length() == 0) {
+    private int validarDatosBasicos(NuevaSolicitud datos) {
+        if (datos.legajo() == null || datos.legajo().trim().length() == 0) {
             System.out.println("Error: legajo vacio");
             return COD_DATOS_INVALIDOS;
         }
-        if (nombre == null || nombre.trim().length() == 0) {
+        if (datos.nombre() == null || datos.nombre().trim().length() == 0) {
             System.out.println("Error: nombre vacio");
             return COD_DATOS_INVALIDOS;
         }
-        if (!esTipoValido(tipo)) {
+        if (!esTipoValido(datos.tipo())) {
             System.out.println("Error: tipo de solicitud invalido");
             return COD_TIPO_INVALIDO;
         }
-        if (prioridad < PRIORIDAD_MINIMA || prioridad > PRIORIDAD_MAXIMA) {
+        if (datos.prioridad() < PRIORIDAD_MINIMA || datos.prioridad() > PRIORIDAD_MAXIMA) {
             System.out.println("Error: prioridad fuera de rango");
             return COD_PRIORIDAD_INVALIDA;
         }
@@ -142,18 +148,17 @@ public class SistemaSolicitudes {
         return Math.min(prioridad + 1, PRIORIDAD_MAXIMA);
     }
 
-    private Solicitud crearSolicitud(Estudiante estudiante, String tipo, String descripcion,
-                                     int prioridad, boolean urgente, LocalDate fecha) {
+    private Solicitud crearSolicitud(Estudiante estudiante, NuevaSolicitud datos, int prioridadFinal) {
         Solicitud nueva = new Solicitud();
         ultimoId = ultimoId + 1;
         nueva.id = ultimoId;
         nueva.estudiante = estudiante;
-        nueva.tipo = tipo;
-        nueva.descripcion = descripcion;
-        nueva.prioridad = prioridad;
-        nueva.urgente = urgente;
+        nueva.tipo = datos.tipo();
+        nueva.descripcion = datos.descripcion();
+        nueva.prioridad = prioridadFinal;
+        nueva.urgente = datos.urgente();
         nueva.estado = "PENDIENTE";
-        nueva.fechaCreacion = fecha;
+        nueva.fechaCreacion = datos.fecha();
         return nueva;
     }
 

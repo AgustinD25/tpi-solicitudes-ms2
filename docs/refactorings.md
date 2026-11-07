@@ -221,3 +221,62 @@ guardar();
 - **Cuidado:** `SIN_ERROR = 0` es un valor interno privado; es seguro porque ningún id válido es 0 (empiezan en 1).
 - **Pendiente:** `crearSolicitud` recibe 6 parámetros; se reduce en R5 (Parameter Object).
 - **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
+## R5. Introduce Parameter Object: `NuevaSolicitud`
+
+- **Smell que cierra:** 3 (Long Parameter List). **Refactoring obligatorio.**
+- **Archivos:** `NuevaSolicitud.java` (nuevo, un `record`), `SistemaSolicitudes.java`.
+- **Qué se hizo:** los 8 datos de una solicitud nueva se agruparon en `NuevaSolicitud`. La lógica vive ahora en
+  `registrarSolicitud(NuevaSolicitud)` y los métodos auxiliares de R4 reciben el objeto en vez de listas de
+  parámetros (`crearSolicitud` pasó de 6 parámetros a 3). Las dos firmas viejas (7 y 8 parámetros) se conservan
+  como delegaciones: son contrato público que usan los tests y `Main`.
+
+Antes:
+```java
+public int registrarSolicitud(String legajo, String nombre, String email, String tipo,
+                              String descripcion, int prioridad, boolean urgente, LocalDate fecha) {
+    int codigo = validarDatosBasicos(legajo, nombre, tipo, prioridad);
+    ...
+    Solicitud nueva = crearSolicitud(estudiante, tipo, descripcion, prioridadFinal, urgente, fecha);
+```
+
+Después:
+```java
+public record NuevaSolicitud(String legajo, String nombre, String email, String tipo,
+                             String descripcion, int prioridad, boolean urgente, LocalDate fecha) { }
+
+public int registrarSolicitud(String legajo, String nombre, String email, String tipo,
+                              String descripcion, int prioridad, boolean urgente, LocalDate fecha) {
+    return registrarSolicitud(new NuevaSolicitud(legajo, nombre, email, tipo, descripcion,
+            prioridad, urgente, fecha));
+}
+
+public int registrarSolicitud(NuevaSolicitud datos) {
+    int codigo = validarDatosBasicos(datos);
+    ...
+    Solicitud nueva = crearSolicitud(estudiante, datos, prioridadFinal);
+```
+
+- **Por qué:** seis de los ocho parámetros eran `String` consecutivos: se podía invertir `nombre` con `email` sin que
+  compilara con error. El objeto nombra cada campo y agregar un dato nuevo deja de cambiar todas las firmas.
+  Se eligió un `record` (Java 17) porque es inmutable y no necesita getters escritos a mano.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
+- **Pendiente:** las firmas viejas se podrán retirar cuando `Main` y los tests dejen de usarlas; los tests no se
+  tocan, así que se conservan como parte de la fachada.
+
+---
+
+## Pendientes y decisiones abiertas
+
+| Smell | Estado | Nota |
+|---|---|---|
+| 8, 10 (parcial), 6, 2, 3 | Cerrados (R1 a R5) | `lst`, `est` y `resp` conservan su nombre por los tests |
+| 4, 5, 13 (enums y encapsulamiento) | **Bloqueados por los tests actuales** | Ver abajo |
+| 7 (duplicación), 9 (errores), 11 (DIP), 14 (acoplamiento temporal), 1 (God Class), 12 (ISP/LSP) | Pendientes | |
+
+**Bloqueo de los smells 4, 5 y 13.** Los tests de caracterización leen y comparan los campos públicos tal como
+están: `assertEquals("PENDIENTE", s.estado)` (campo `String`), `s.tipo`, `s.estudiante.legajo`, `s.responsable.nombre`,
+`sis.lst`, `sis.est`, `sis.resp`. Pasar `estado` y `tipo` a `enum`, o volver privados los campos, rompería esos tests, y
+`CLAUDE.md` prohíbe modificarlos. Hace falta una decisión explícita antes de continuar con esos tres smells.
