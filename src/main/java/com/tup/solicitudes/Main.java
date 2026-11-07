@@ -26,7 +26,6 @@ public class Main {
             System.out.println("7. Filtrar por prioridad");
             System.out.println("8. Reporte");
             System.out.println("9. Exportar (CSV / JSON)");
-            System.out.println("10. Exportar PDF");
             System.out.println("0. Salir");
             System.out.print("Opcion: ");
             String op = sc.nextLine().trim();
@@ -104,15 +103,6 @@ public class Main {
                             System.out.println(rs.exportarJSON());
                         } else {
                             System.out.println("Formato no soportado");
-                        }
-                        break;
-                    }
-                    case "10": {
-                        Exportable ex = new ReporteSimple(sis.getSolicitudes());
-                        try {
-                            System.out.println(ex.exportarPDF());
-                        } catch (UnsupportedOperationException uoe) {
-                            System.out.println("Error: esta implementacion no soporta exportar a PDF");
                         }
                         break;
                     }

@@ -1,19 +1,26 @@
 package com.tup.solicitudes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Method;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * Caracterizacion de Exportable / ReporteSimple (version inicial).
- * Va aparte de los tests de SistemaSolicitudes porque estas dos clases
- * cambian de forma en el refactoring (ISP / LSP), mientras que los otros tests
- * deben correr sin cambios sobre ambas versiones.
+ * Tests de la exportacion (ReporteSimple).
+ *
+ * REESCRITO A PROPOSITO en el refactoring de ISP/LSP (smell 12): es la excepcion prevista en CLAUDE.md.
+ * - Los tests de CSV y JSON conservan exactamente los mismos valores esperados; solo cambia el tipo con el
+ *   que se declara la variable (Exportable -> ExportadorCSV / ExportadorJSON).
+ * - El test de PDF cambia de sentido: antes comprobaba que exportarPDF() lanzaba
+ *   UnsupportedOperationException (un contrato roto, violacion de LSP); ahora comprueba que ReporteSimple
+ *   ya no promete PDF, porque no puede cumplirlo.
  */
 class ExportacionCaracterizacionTest {
 
@@ -28,7 +35,7 @@ class ExportacionCaracterizacionTest {
 
     @Test
     void exportarCsvDelReporteSimple() {
-        Exportable rep = new ReporteSimple(dosSolicitudes());
+        ExportadorCSV rep = new ReporteSimple(dosSolicitudes());
 
         assertEquals("id;legajo;tipo;prioridad;estado\n"
                 + "1;L001;CERTIFICADO;1;PENDIENTE\n"
@@ -37,7 +44,7 @@ class ExportacionCaracterizacionTest {
 
     @Test
     void exportarJsonDelReporteSimple() {
-        Exportable rep = new ReporteSimple(dosSolicitudes());
+        ExportadorJSON rep = new ReporteSimple(dosSolicitudes());
 
         assertEquals("[\n"
                 + "  {\"id\": 1, \"legajo\": \"L001\", \"tipo\": \"CERTIFICADO\", \"prioridad\": 1, \"estado\": \"PENDIENTE\"},\n"
@@ -46,11 +53,14 @@ class ExportacionCaracterizacionTest {
     }
 
     @Test
-    void exportarPdfLanzaUnsupportedOperationException() {
-        Exportable rep = new ReporteSimple(dosSolicitudes());
+    void elReporteSimpleNoPrometeExportarAPdf() {
+        boolean tieneMetodoPdf = Arrays.stream(ReporteSimple.class.getMethods())
+                .map(Method::getName)
+                .anyMatch(nombre -> nombre.equals("exportarPDF"));
 
-        UnsupportedOperationException ex = assertThrows(UnsupportedOperationException.class, rep::exportarPDF);
-
-        assertEquals("PDF no soportado", ex.getMessage());
+        assertFalse(tieneMetodoPdf);
+        // y lo que si ofrece, lo cumple: ambas capacidades estan disponibles sin excepciones
+        assertTrue(ExportadorCSV.class.isAssignableFrom(ReporteSimple.class));
+        assertTrue(ExportadorJSON.class.isAssignableFrom(ReporteSimple.class));
     }
 }

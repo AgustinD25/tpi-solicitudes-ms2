@@ -713,6 +713,60 @@ if (!ValidadorEmail.esValido(datos.email())) {
 
 ---
 
+## R14. Segregación de interfaces: `ExportadorCSV` y `ExportadorJSON` reemplazan a `Exportable`
+
+- **Smell que cierra:** 12 (interfaz gorda + violación de LSP). Principios: ISP y LSP.
+- **Archivos:** `ExportadorCSV.java` y `ExportadorJSON.java` (nuevos), `Exportable.java` (eliminado),
+  `ReporteSimple.java`, `Main.java`, y `ExportacionCaracterizacionTest.java` (reescrito a propósito).
+- **Qué se hizo:** `Exportable` obligaba a implementar CSV, JSON **y PDF**. `ReporteSimple` no puede exportar PDF,
+  así que lanzaba `UnsupportedOperationException`, y `Main` tenía que atrapar esa excepción: el cliente necesitaba
+  saber qué implementación tenía adelante. Ahora hay una interfaz por capacidad, `ReporteSimple` implementa solo las
+  que cumple, y el `catch` de `Main` desapareció junto con la opción de menú que solo existía para mostrarlo.
+
+Antes:
+```java
+public interface Exportable {
+    String exportarCSV();
+    String exportarJSON();
+    String exportarPDF();
+}
+public class ReporteSimple implements Exportable {
+    public String exportarPDF() {
+        throw new UnsupportedOperationException("PDF no soportado");   // contrato roto (LSP)
+    }
+}
+// Main, opción 10
+Exportable ex = new ReporteSimple(sis.getSolicitudes());
+try {
+    System.out.println(ex.exportarPDF());
+} catch (UnsupportedOperationException uoe) {
+    System.out.println("Error: esta implementacion no soporta exportar a PDF");
+}
+```
+
+Después:
+```java
+public interface ExportadorCSV  { String exportarCSV(); }
+public interface ExportadorJSON { String exportarJSON(); }
+public class ReporteSimple implements ExportadorCSV, ExportadorJSON { ... }    // sin exportarPDF
+// Main: la opción 10 y su try/catch ya no existen
+```
+
+- **Cambio de comportamiento externo, documentado:** el menú pierde la opción "10. Exportar PDF". Esa opción solo
+  mostraba el mensaje "no soporta exportar a PDF" (nunca exportó nada), y se había agregado para evidenciar la
+  violación de LSP. Cualquier nuevo formato (por ejemplo PDF) se agrega como una clase que implemente una interfaz
+  nueva, sin tocar las existentes (OCP).
+- **Test reescrito a propósito** (excepción prevista en `CLAUDE.md`, la única fuera de la de los getters):
+  - `exportarCsvDelReporteSimple` y `exportarJsonDelReporteSimple`: **mismos valores esperados**; solo cambia el tipo
+    de la variable (`Exportable` → `ExportadorCSV` / `ExportadorJSON`).
+  - `exportarPdfLanzaUnsupportedOperationException` → `elReporteSimpleNoPrometeExportarAPdf`: antes verificaba el
+    contrato roto; ahora verifica que `ReporteSimple` ya no tiene `exportarPDF` y que sí cumple las otras dos
+    interfaces.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas. Los 46 tests de `SistemaSolicitudes...` y `Defectos...` no se
+  tocaron.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
@@ -722,4 +776,4 @@ if (!ValidadorEmail.esValido(datos.email())) {
 | 7, 11, 1 | Cerrados (R10 a R13) | |
 | 9 (errores) | Cerrado en la lógica de negocio (R12) | Los errores de archivo siguen tragados a propósito (D3, D4, D6, D7) |
 | 14 (acoplamiento temporal) | **Abierto** | Se cierra con la corrección del defecto: `cargar()` antes de registrar responsables |
-| 12 (ISP/LSP en la exportación) | Pendiente | Requiere reescribir `ExportacionCaracterizacionTest` a propósito (ver `CLAUDE.md`) |
+| 12 (ISP/LSP en la exportación) | Cerrado (R14) | `ExportacionCaracterizacionTest` reescrito a propósito |

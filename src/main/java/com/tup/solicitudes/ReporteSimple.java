@@ -2,7 +2,7 @@ package com.tup.solicitudes;
 
 import java.util.List;
 
-public class ReporteSimple implements Exportable {
+public class ReporteSimple implements ExportadorCSV, ExportadorJSON {
     private List<Solicitud> datos;
 
     public ReporteSimple(List<Solicitud> datos) {
@@ -37,10 +37,5 @@ public class ReporteSimple implements Exportable {
         }
         sb.append("]");
         return sb.toString();
-    }
-
-    @Override
-    public String exportarPDF() {
-        throw new UnsupportedOperationException("PDF no soportado");
     }
 }
