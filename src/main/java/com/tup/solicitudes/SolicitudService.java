@@ -61,6 +61,9 @@ public class SolicitudService {
 
     public Solicitud asignarResponsable(int idSolicitud, int idResponsable) {
         Solicitud solicitud = buscarPorId(idSolicitud);
+        if (solicitud.getEstadoSolicitud().esFinal()) {
+            throw new SolicitudCerradaException();
+        }
         Responsable responsable = responsableService.buscarPorId(idResponsable)
                 .orElseThrow(() -> new ResponsableNoEncontradoException(idResponsable));
         if (!solicitud.puedeSerAtendidaPor(responsable)) {

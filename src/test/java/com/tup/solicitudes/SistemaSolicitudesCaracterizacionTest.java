@@ -346,16 +346,30 @@ class SistemaSolicitudesCaracterizacionTest {
         assertTrue(consola().contains("Error: no existe el responsable 99"));
     }
 
+    // CAMBIO DELIBERADO (correccion del defecto D1): antes este test se llamaba
+    // sePuedeReasignarYAsignarEnCualquierEstado y exigia que se pudiera asignar un responsable a una
+    // solicitud RESUELTA. Ahora una solicitud cerrada (RESUELTA o RECHAZADA) no admite asignaciones.
+    // Sigue siendo valido reasignar mientras la solicitud no este cerrada.
     @Test
-    void sePuedeReasignarYAsignarEnCualquierEstado() {
+    void sePuedeReasignarMientrasNoEsteCerradaPeroNoUnaCerrada() {
         sis.registrarResponsable(4, "Pablo Soto", "pablo.soto@ejemplo.edu", "Alumnado");
         reg("L001", "CERTIFICADO");
+        reg("L002", "CERTIFICADO");
         sis.cambiarEstado(1, "EN_PROCESO");
-        sis.cambiarEstado(1, "RESUELTA");
 
         assertTrue(sis.asignarResponsable(1, 1));
-        assertTrue(sis.asignarResponsable(1, 4));
+        assertTrue(sis.asignarResponsable(1, 4));          // reasignar en proceso: se permite
         assertEquals("Pablo Soto", buscar(1).getResponsable().getNombre());
+
+        sis.cambiarEstado(1, "RESUELTA");
+        sis.cambiarEstado(2, "RECHAZADA");
+        salida.reset();
+
+        assertFalse(sis.asignarResponsable(1, 1));         // RESUELTA
+        assertFalse(sis.asignarResponsable(2, 1));         // RECHAZADA
+        assertEquals("Pablo Soto", buscar(1).getResponsable().getNombre());   // no cambio
+        assertNull(buscar(2).getResponsable());
+        assertTrue(consola().contains("Error: la solicitud ya esta cerrada"));
     }
 
     @Test
