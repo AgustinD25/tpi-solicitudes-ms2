@@ -570,6 +570,57 @@ public void imprimir(Solicitud solicitud) {
 
 ---
 
+## R11. Extract Interface + Extract Class: repositorios (memoria y CSV)
+
+- **Smell que cierra:** 11 (acoplamiento a lo concreto). También avanza el smell 1. Principios: DIP e ISP.
+- **Archivos nuevos:** `SolicitudRepository`, `EstudianteRepository` (interfaces), `RepositorioEnMemoria`,
+  `RepositorioCsv`. **Modificado:** `SistemaSolicitudes.java`.
+- **Qué se hizo:** la lógica de negocio dejó de crear `FileWriter`/`FileReader`. Ahora depende de dos interfaces
+  chicas; el CSV es una implementación (`RepositorioCsv` extiende a la de memoria). El sistema tiene dos
+  constructores: `SistemaSolicitudes(String ruta)` (como siempre: `null` = solo memoria) y
+  `SistemaSolicitudes(SolicitudRepository, EstudianteRepository)` para elegir cualquier almacenamiento.
+
+Antes (`SistemaSolicitudes`, dependencia directa de `java.io`):
+```java
+import java.io.FileWriter;
+...
+void guardar() {
+    FileWriter escritor = new FileWriter(rutaArchivo);
+    for (Solicitud solicitud : solicitudes) { escritor.write(...); }
+    ...
+}
+solicitudes.add(nueva);
+guardar();
+```
+
+Después:
+```java
+public interface SolicitudRepository {
+    List<Solicitud> listarTodas();
+    Optional<Solicitud> buscarPorId(int id);
+    int generarId();
+    void guardar(Solicitud nueva);
+    void actualizar(Solicitud existente);
+    void cargar();
+}
+
+solicitudRepository.guardar(nueva);                 // en la fachada: no sabe si es memoria o archivo
+public SistemaSolicitudes(SolicitudRepository solicitudRepository, EstudianteRepository estudianteRepository)
+```
+
+- **Por qué dos interfaces:** quien solo trabaja con estudiantes no depende de los métodos de solicitudes (ISP).
+  `RepositorioEnMemoria` implementa las dos.
+- **Qué quedó fuera de la clase dios:** el formato del CSV, la lectura, la escritura y la numeración de ids.
+- **Se conserva a propósito el manejo de errores del archivo:** `RepositorioCsv` mantiene tal cual el catch vacío, el
+  archivo que no se cierra si falla y el truncado (defectos D3, D4, D6 y D7), porque los tests de caracterización
+  los fijan. Se corrigen después del refactoring, uno por commit. Está escrito en el comentario de la clase.
+- **Smell 14 sigue abierto:** `RepositorioCsv` resuelve cada responsable con una función que recibe al construirse y
+  la consulta **al cargar**. Si se carga antes de registrar responsables, siguen quedando en `null` (test
+  `smell14_cargarAntesDeRegistrarResponsablesDejaLasAsignacionesEnNull`). Se corrige con el defecto correspondiente.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |

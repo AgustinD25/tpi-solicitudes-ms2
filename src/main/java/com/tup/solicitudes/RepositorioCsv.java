@@ -1,0 +1,91 @@
+package com.tup.solicitudes;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.time.LocalDate;
+import java.util.function.Function;
+
+/**
+ * Repositorio que ademas guarda las solicitudes en un archivo CSV (una linea por solicitud):
+ * id;legajo;nombre;email;tipo;descripcion;prioridad;urgente;estado;idResponsable;fecha
+ *
+ * Los responsables no se guardan en el archivo, solo su id; al cargar se resuelven con la funcion recibida.
+ *
+ * ATENCION: el manejo de errores de guardar() y cargar() (catch vacio, archivo que no se cierra si falla,
+ * archivo truncado) es el de la version original y se conserva A PROPOSITO porque los tests de caracterizacion
+ * lo fijan (defectos D3, D4, D6 y D7). Se corrige despues del refactoring, un defecto por commit.
+ */
+public class RepositorioCsv extends RepositorioEnMemoria {
+    static final int ID_SIN_RESPONSABLE = -1;
+
+    private final String rutaArchivo;
+    private final Function<Integer, Responsable> buscarResponsable;
+
+    public RepositorioCsv(String rutaArchivo, Function<Integer, Responsable> buscarResponsable) {
+        this.rutaArchivo = rutaArchivo;
+        this.buscarResponsable = buscarResponsable;
+    }
+
+    @Override
+    public void guardar(Solicitud nueva) {
+        super.guardar(nueva);
+        escribir();
+    }
+
+    @Override
+    public void actualizar(Solicitud existente) {
+        escribir();
+    }
+
+    private void escribir() {
+        try {
+            FileWriter escritor = new FileWriter(rutaArchivo);
+            for (Solicitud solicitud : listarTodas()) {
+                escritor.write(solicitud.getId() + ";" + solicitud.getEstudiante().getLegajo() + ";"
+                        + solicitud.getEstudiante().getNombre() + ";"
+                        + solicitud.getEstudiante().getEmail() + ";" + solicitud.getTipo() + ";"
+                        + solicitud.getDescripcion().replace(';', ',') + ";"
+                        + solicitud.getPrioridad() + ";" + solicitud.isUrgente() + ";" + solicitud.getEstado() + ";"
+                        + (solicitud.getResponsable() == null ? ID_SIN_RESPONSABLE : solicitud.getResponsable().getId())
+                        + ";" + solicitud.getFechaCreacion() + "\n");
+            }
+            escritor.close();
+        } catch (Exception ex) {
+        }
+    }
+
+    @Override
+    public void cargar() {
+        try {
+            BufferedReader lector = new BufferedReader(new FileReader(rutaArchivo));
+            String linea;
+            while ((linea = lector.readLine()) != null) {
+                String[] campos = linea.split(";");
+                int id = Integer.parseInt(campos[0]);
+                Estudiante estudiante = buscarPorLegajo(campos[1]).orElse(null);
+                if (estudiante == null) {
+                    estudiante = new Estudiante(campos[1], campos[2], campos[3]);
+                    agregar(estudiante);
+                }
+                TipoSolicitud tipo = TipoSolicitud.desde(campos[4]);
+                if (tipo == null) {
+                    throw new IllegalArgumentException("tipo desconocido en el archivo: " + campos[4]);
+                }
+                int prioridad = Integer.parseInt(campos[6]);
+                boolean urgente = Boolean.parseBoolean(campos[7]);
+                EstadoSolicitud estado = EstadoSolicitud.desde(campos[8]);
+                if (estado == null) {
+                    throw new IllegalArgumentException("estado desconocido en el archivo: " + campos[8]);
+                }
+                Responsable responsable = buscarResponsable.apply(Integer.parseInt(campos[9]));
+                LocalDate fechaCreacion = LocalDate.parse(campos[10]);
+                Solicitud solicitud = new Solicitud(id, estudiante, tipo, campos[5], prioridad, urgente, fechaCreacion);
+                solicitud.restaurar(estado, responsable);
+                incorporar(solicitud);
+            }
+            lector.close();
+        } catch (Exception ex) {
+        }
+    }
+}

@@ -1,8 +1,5 @@
 package com.tup.solicitudes;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,28 +18,34 @@ public class SistemaSolicitudes {
     static final int PRIORIDAD_MINIMA = 1;
     static final int PRIORIDAD_MAXIMA = 3;
 
-    // Formato del CSV: valor de la columna "responsable" cuando no hay uno asignado
-    static final int ID_SIN_RESPONSABLE = -1;
-
-    private final List<Solicitud> solicitudes = new ArrayList<>();
-    private final List<Estudiante> estudiantes = new ArrayList<>();
+    private final SolicitudRepository solicitudRepository;
+    private final EstudianteRepository estudianteRepository;
     private final List<Responsable> responsables = new ArrayList<>();
-    private int ultimoId = 0;
     private final ReporteService reporteService = new ReporteService();
     private final PresentadorSolicitud presentador = new PresentadorSolicitud();
-    private final String rutaArchivo;
 
+    /** Sin ruta, los datos quedan solo en memoria; con ruta, se guardan ademas en un archivo CSV. */
     public SistemaSolicitudes(String rutaArchivo) {
-        this.rutaArchivo = rutaArchivo;
+        RepositorioEnMemoria repositorio = rutaArchivo == null
+                ? new RepositorioEnMemoria()
+                : new RepositorioCsv(rutaArchivo, this::buscarResponsablePorId);
+        this.solicitudRepository = repositorio;
+        this.estudianteRepository = repositorio;
+    }
+
+    /** Permite elegir cualquier almacenamiento (DIP). */
+    public SistemaSolicitudes(SolicitudRepository solicitudRepository, EstudianteRepository estudianteRepository) {
+        this.solicitudRepository = solicitudRepository;
+        this.estudianteRepository = estudianteRepository;
     }
 
     // Las listas se exponen como copias no modificables: quien las lee no puede alterar el estado interno.
     public List<Solicitud> getSolicitudes() {
-        return List.copyOf(solicitudes);
+        return solicitudRepository.listarTodas();
     }
 
     public List<Estudiante> getEstudiantes() {
-        return List.copyOf(estudiantes);
+        return estudianteRepository.listarTodos();
     }
 
     public List<Responsable> getResponsables() {
@@ -63,6 +66,16 @@ public class SistemaSolicitudes {
         }
         responsables.add(responsable);
         return responsable;
+    }
+
+    private Responsable buscarResponsablePorId(int id) {
+        Responsable encontrado = null;
+        for (Responsable candidato : responsables) {
+            if (candidato.getId() == id) {
+                encontrado = candidato;
+            }
+        }
+        return encontrado;
     }
 
     // ---------- registro ----------
@@ -97,8 +110,7 @@ public class SistemaSolicitudes {
         Estudiante estudiante = buscarOCrearEstudiante(estudianteIngresado);
         int prioridadFinal = calcularPrioridad(datos.prioridad(), datos.urgente());
         Solicitud nueva = crearSolicitud(estudiante, datos, prioridadFinal);
-        solicitudes.add(nueva);
-        guardar();
+        solicitudRepository.guardar(nueva);
         System.out.println("Solicitud #" + nueva.getId() + " registrada (" + datos.tipo()
                 + ", prioridad " + prioridadFinal + ")");
         return nueva.getId();
@@ -127,7 +139,7 @@ public class SistemaSolicitudes {
 
     private int contarPendientes(String legajo) {
         int pendientes = 0;
-        for (Solicitud solicitud : solicitudes) {
+        for (Solicitud solicitud : solicitudRepository.listarTodas()) {
             if (solicitud.getEstudiante().getLegajo().equals(legajo)
                     && solicitud.getEstadoSolicitud() == EstadoSolicitud.PENDIENTE) {
                 pendientes++;
@@ -138,15 +150,10 @@ public class SistemaSolicitudes {
 
     // Devuelve el estudiante ya registrado con ese legajo o, si no existe, registra el ingresado.
     private Estudiante buscarOCrearEstudiante(Estudiante estudianteIngresado) {
-        Estudiante estudiante = null;
-        for (Estudiante candidato : estudiantes) {
-            if (candidato.getLegajo().equals(estudianteIngresado.getLegajo())) {
-                estudiante = candidato;
-            }
-        }
+        Estudiante estudiante = estudianteRepository.buscarPorLegajo(estudianteIngresado.getLegajo()).orElse(null);
         if (estudiante == null) {
             estudiante = estudianteIngresado;
-            estudiantes.add(estudiante);
+            estudianteRepository.agregar(estudiante);
         }
         return estudiante;
     }
@@ -160,9 +167,8 @@ public class SistemaSolicitudes {
     }
 
     private Solicitud crearSolicitud(Estudiante estudiante, NuevaSolicitud datos, int prioridadFinal) {
-        ultimoId = ultimoId + 1;
-        return new Solicitud(ultimoId, estudiante, TipoSolicitud.desde(datos.tipo()), datos.descripcion(),
-                prioridadFinal, datos.urgente(), datos.fecha());
+        return new Solicitud(solicitudRepository.generarId(), estudiante, TipoSolicitud.desde(datos.tipo()),
+                datos.descripcion(), prioridadFinal, datos.urgente(), datos.fecha());
     }
 
     // ---------- estados ----------
@@ -184,12 +190,12 @@ public class SistemaSolicitudes {
             return false;
         }
         solicitud.pasarA(destino);
-        guardar();
+        solicitudRepository.actualizar(solicitud);
         System.out.println("Solicitud #" + id + " ahora esta " + nuevoEstado);
         return true;
     }
 
-    // ---------- responsables ----------
+    // ---------- asignacion ----------
 
     public boolean asignarResponsable(int idSolicitud, int idResponsable) {
         Solicitud solicitud = buscarSolicitudPorId(idSolicitud);
@@ -197,12 +203,7 @@ public class SistemaSolicitudes {
             System.out.println("Error: no existe la solicitud " + idSolicitud);
             return false;
         }
-        Responsable responsable = null;
-        for (Responsable candidato : responsables) {
-            if (candidato.getId() == idResponsable) {
-                responsable = candidato;
-            }
-        }
+        Responsable responsable = buscarResponsablePorId(idResponsable);
         if (responsable == null) {
             System.out.println("Error: no existe el responsable " + idResponsable);
             return false;
@@ -213,25 +214,20 @@ public class SistemaSolicitudes {
             return false;
         }
         solicitud.asignarResponsable(responsable);
-        guardar();
+        solicitudRepository.actualizar(solicitud);
         System.out.println("Solicitud #" + idSolicitud + " asignada a " + responsable.getNombre());
         return true;
     }
 
     // ---------- busquedas ----------
 
-    Solicitud buscarSolicitudPorId(int id) {
-        for (Solicitud solicitud : solicitudes) {
-            if (solicitud.getId() == id) {
-                return solicitud;
-            }
-        }
-        return null;
+    private Solicitud buscarSolicitudPorId(int id) {
+        return solicitudRepository.buscarPorId(id).orElse(null);
     }
 
     public List<Solicitud> filtrarPorEstado(String estado) {
         List<Solicitud> resultado = new ArrayList<>();
-        for (Solicitud solicitud : solicitudes) {
+        for (Solicitud solicitud : solicitudRepository.listarTodas()) {
             if (solicitud.getEstado().equals(estado)) {
                 resultado.add(solicitud);
             }
@@ -241,7 +237,7 @@ public class SistemaSolicitudes {
 
     public List<Solicitud> filtrarPorTipo(String tipo) {
         List<Solicitud> resultado = new ArrayList<>();
-        for (Solicitud solicitud : solicitudes) {
+        for (Solicitud solicitud : solicitudRepository.listarTodas()) {
             if (solicitud.getTipo().equals(tipo)) {
                 resultado.add(solicitud);
             }
@@ -251,7 +247,7 @@ public class SistemaSolicitudes {
 
     public List<Solicitud> filtrarPorPrioridad(int prioridad) {
         List<Solicitud> resultado = new ArrayList<>();
-        for (Solicitud solicitud : solicitudes) {
+        for (Solicitud solicitud : solicitudRepository.listarTodas()) {
             if (solicitud.getPrioridad() == prioridad) {
                 resultado.add(solicitud);
             }
@@ -269,7 +265,7 @@ public class SistemaSolicitudes {
     // ---------- reporte ----------
 
     public String reporte(LocalDate hoy) {
-        String texto = reporteService.generar(solicitudes, hoy);
+        String texto = reporteService.generar(solicitudRepository.listarTodas(), hoy);
         System.out.print(texto);
         return texto;
     }
@@ -291,73 +287,11 @@ public class SistemaSolicitudes {
 
     // ---------- persistencia ----------
 
-    void guardar() {
-        if (rutaArchivo == null) {
-            return;
-        }
-        try {
-            FileWriter escritor = new FileWriter(rutaArchivo);
-            for (Solicitud solicitud : solicitudes) {
-                escritor.write(solicitud.getId() + ";" + solicitud.getEstudiante().getLegajo() + ";"
-                        + solicitud.getEstudiante().getNombre() + ";"
-                        + solicitud.getEstudiante().getEmail() + ";" + solicitud.getTipo() + ";"
-                        + solicitud.getDescripcion().replace(';', ',') + ";"
-                        + solicitud.getPrioridad() + ";" + solicitud.isUrgente() + ";" + solicitud.getEstado() + ";"
-                        + (solicitud.getResponsable() == null ? ID_SIN_RESPONSABLE : solicitud.getResponsable().getId())
-                        + ";" + solicitud.getFechaCreacion() + "\n");
-            }
-            escritor.close();
-        } catch (Exception ex) {
-        }
-    }
-
+    /**
+     * Carga lo guardado. Los responsables deben estar registrados antes: si no, las solicitudes cargadas quedan
+     * sin responsable (acoplamiento temporal, smell 14, conservado hasta corregir el defecto).
+     */
     public void cargar() {
-        if (rutaArchivo == null) {
-            return;
-        }
-        try {
-            BufferedReader lector = new BufferedReader(new FileReader(rutaArchivo));
-            String linea;
-            while ((linea = lector.readLine()) != null) {
-                String[] campos = linea.split(";");
-                int id = Integer.parseInt(campos[0]);
-                Estudiante estudiante = null;
-                for (Estudiante candidato : estudiantes) {
-                    if (candidato.getLegajo().equals(campos[1])) {
-                        estudiante = candidato;
-                    }
-                }
-                if (estudiante == null) {
-                    estudiante = new Estudiante(campos[1], campos[2], campos[3]);
-                    estudiantes.add(estudiante);
-                }
-                TipoSolicitud tipo = TipoSolicitud.desde(campos[4]);
-                if (tipo == null) {
-                    throw new IllegalArgumentException("tipo desconocido en el archivo: " + campos[4]);
-                }
-                int prioridad = Integer.parseInt(campos[6]);
-                boolean urgente = Boolean.parseBoolean(campos[7]);
-                EstadoSolicitud estado = EstadoSolicitud.desde(campos[8]);
-                if (estado == null) {
-                    throw new IllegalArgumentException("estado desconocido en el archivo: " + campos[8]);
-                }
-                int idResponsable = Integer.parseInt(campos[9]);
-                Responsable responsable = null;
-                for (Responsable candidato : responsables) {
-                    if (candidato.getId() == idResponsable) {
-                        responsable = candidato;
-                    }
-                }
-                LocalDate fechaCreacion = LocalDate.parse(campos[10]);
-                Solicitud solicitud = new Solicitud(id, estudiante, tipo, campos[5], prioridad, urgente, fechaCreacion);
-                solicitud.restaurar(estado, responsable);
-                solicitudes.add(solicitud);
-                if (solicitud.getId() > ultimoId) {
-                    ultimoId = solicitud.getId();
-                }
-            }
-            lector.close();
-        } catch (Exception ex) {
-        }
+        solicitudRepository.cargar();
     }
 }
