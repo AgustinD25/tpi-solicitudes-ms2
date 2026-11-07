@@ -23,7 +23,7 @@ class ExportacionCaracterizacionTest {
         sis.registrarSolicitud("L001", "Ana", "ana@ejemplo.edu", "CERTIFICADO", "d", 1, false, hoy);
         sis.registrarSolicitud("L002", "Beto", "beto@ejemplo.edu", "EQUIVALENCIA", "d", 2, false, hoy);
         sis.cambiarEstado(2, "EN_PROCESO");
-        return new ArrayList<>(sis.lst);
+        return new ArrayList<>(sis.getSolicitudes());
     }
 
     @Test

@@ -74,8 +74,8 @@ class SistemaSolicitudesCaracterizacionTest {
     }
 
     private Solicitud buscar(int id) {
-        for (Solicitud s : sis.lst) {
-            if (s.id == id) {
+        for (Solicitud s : sis.getSolicitudes()) {
+            if (s.getId() == id) {
                 return s;
             }
         }
@@ -83,7 +83,7 @@ class SistemaSolicitudesCaracterizacionTest {
     }
 
     private static List<Integer> ids(List<Solicitud> l) {
-        return l.stream().map(s -> s.id).toList();
+        return l.stream().map(s -> s.getId()).toList();
     }
 
     // ---------- registro ----------
@@ -94,18 +94,18 @@ class SistemaSolicitudesCaracterizacionTest {
                 "Constancia", 2, false, LocalDate.of(2026, 3, 1));
 
         assertEquals(1, id);
-        assertEquals(1, sis.lst.size());
-        Solicitud s = sis.lst.get(0);
-        assertEquals("PENDIENTE", s.estado);
-        assertEquals("CERTIFICADO", s.tipo);
-        assertEquals("Constancia", s.descripcion);
-        assertEquals(2, s.prioridad);
-        assertFalse(s.urgente);
-        assertEquals(LocalDate.of(2026, 3, 1), s.fechaCreacion);
-        assertNull(s.responsable);
-        assertEquals("L001", s.estudiante.legajo);
-        assertEquals("Ana Perez", s.estudiante.nombre);
-        assertEquals("ana@ejemplo.edu", s.estudiante.email);
+        assertEquals(1, sis.getSolicitudes().size());
+        Solicitud s = sis.getSolicitudes().get(0);
+        assertEquals("PENDIENTE", s.getEstado());
+        assertEquals("CERTIFICADO", s.getTipo());
+        assertEquals("Constancia", s.getDescripcion());
+        assertEquals(2, s.getPrioridad());
+        assertFalse(s.isUrgente());
+        assertEquals(LocalDate.of(2026, 3, 1), s.getFechaCreacion());
+        assertNull(s.getResponsable());
+        assertEquals("L001", s.getEstudiante().getLegajo());
+        assertEquals("Ana Perez", s.getEstudiante().getNombre());
+        assertEquals("ana@ejemplo.edu", s.getEstudiante().getEmail());
         assertEquals("Solicitud #1 registrada (CERTIFICADO, prioridad 2)\n".replace("\n", System.lineSeparator()),
                 consola());
     }
@@ -116,8 +116,8 @@ class SistemaSolicitudesCaracterizacionTest {
         assertEquals(2, reg("L001", "EQUIVALENCIA"));
         assertEquals(3, reg("L002", "RECLAMO_NOTA"));
 
-        assertEquals(2, sis.est.size());
-        assertTrue(sis.lst.get(0).estudiante == sis.lst.get(1).estudiante);
+        assertEquals(2, sis.getEstudiantes().size());
+        assertTrue(sis.getSolicitudes().get(0).getEstudiante() == sis.getSolicitudes().get(1).getEstudiante());
     }
 
     @Test
@@ -126,7 +126,7 @@ class SistemaSolicitudesCaracterizacionTest {
                 "d", 1, false);
 
         assertEquals(1, id);
-        assertEquals(LocalDate.now(), sis.lst.get(0).fechaCreacion);
+        assertEquals(LocalDate.now(), sis.getSolicitudes().get(0).getFechaCreacion());
     }
 
     // ---------- prioridad / urgencia ----------
@@ -137,9 +137,9 @@ class SistemaSolicitudesCaracterizacionTest {
         reg("L002", "CERTIFICADO", 2, false, HOY);
         reg("L003", "CERTIFICADO", 3, false, HOY);
 
-        assertEquals(1, buscar(1).prioridad);
-        assertEquals(2, buscar(2).prioridad);
-        assertEquals(3, buscar(3).prioridad);
+        assertEquals(1, buscar(1).getPrioridad());
+        assertEquals(2, buscar(2).getPrioridad());
+        assertEquals(3, buscar(3).getPrioridad());
     }
 
     @Test
@@ -148,10 +148,10 @@ class SistemaSolicitudesCaracterizacionTest {
         reg("L002", "CERTIFICADO", 2, true, HOY);
         reg("L003", "CERTIFICADO", 3, true, HOY);
 
-        assertEquals(2, buscar(1).prioridad);
-        assertEquals(3, buscar(2).prioridad);
-        assertEquals(3, buscar(3).prioridad);
-        assertTrue(buscar(3).urgente);
+        assertEquals(2, buscar(1).getPrioridad());
+        assertEquals(3, buscar(2).getPrioridad());
+        assertEquals(3, buscar(3).getPrioridad());
+        assertTrue(buscar(3).isUrgente());
     }
 
     // ---------- validaciones de entrada ----------
@@ -161,8 +161,8 @@ class SistemaSolicitudesCaracterizacionTest {
         int id = sis.registrarSolicitud("L001", "Ana", "anaejemplo.edu", "CERTIFICADO", "d", 1, false, HOY);
 
         assertEquals(-1, id);
-        assertTrue(sis.lst.isEmpty());
-        assertTrue(sis.est.isEmpty());
+        assertTrue(sis.getSolicitudes().isEmpty());
+        assertTrue(sis.getEstudiantes().isEmpty());
         assertTrue(consola().contains("Error: email invalido"));
     }
 
@@ -174,7 +174,7 @@ class SistemaSolicitudesCaracterizacionTest {
             assertEquals(-1, sis.registrarSolicitud("L001", "Ana", email, "CERTIFICADO", "d", 1, false, HOY),
                     "email: " + email);
         }
-        assertTrue(sis.lst.isEmpty());
+        assertTrue(sis.getSolicitudes().isEmpty());
     }
 
     @Test
@@ -188,7 +188,7 @@ class SistemaSolicitudesCaracterizacionTest {
         assertEquals(-1, sis.registrarSolicitud("  ", "Ana", "a@b.com", "CERTIFICADO", "d", 1, false, HOY));
         assertEquals(-1, sis.registrarSolicitud("L001", null, "a@b.com", "CERTIFICADO", "d", 1, false, HOY));
         assertEquals(-1, sis.registrarSolicitud("L001", " ", "a@b.com", "CERTIFICADO", "d", 1, false, HOY));
-        assertTrue(sis.lst.isEmpty());
+        assertTrue(sis.getSolicitudes().isEmpty());
     }
 
     @Test
@@ -196,7 +196,7 @@ class SistemaSolicitudesCaracterizacionTest {
         assertEquals(-3, sis.registrarSolicitud("L001", "Ana", "a@b.com", "FOO", "d", 1, false, HOY));
         assertEquals(-3, sis.registrarSolicitud("L001", "Ana", "a@b.com", "certificado", "d", 1, false, HOY));
         assertTrue(consola().contains("Error: tipo de solicitud invalido"));
-        assertTrue(sis.lst.isEmpty());
+        assertTrue(sis.getSolicitudes().isEmpty());
     }
 
     @Test
@@ -226,7 +226,7 @@ class SistemaSolicitudesCaracterizacionTest {
         assertEquals(3, reg("L001", "RECLAMO_NOTA"));
 
         assertEquals(-2, reg("L001", "BAJA_MATERIA"));
-        assertEquals(3, sis.lst.size());
+        assertEquals(3, sis.getSolicitudes().size());
         assertTrue(consola().contains("Error: el estudiante ya tiene 3 solicitudes pendientes"));
     }
 
@@ -254,16 +254,16 @@ class SistemaSolicitudesCaracterizacionTest {
         reg("L003", "CERTIFICADO");
 
         assertTrue(sis.cambiarEstado(1, "EN_PROCESO"));
-        assertEquals("EN_PROCESO", buscar(1).estado);
+        assertEquals("EN_PROCESO", buscar(1).getEstado());
         assertTrue(sis.cambiarEstado(1, "RESUELTA"));
-        assertEquals("RESUELTA", buscar(1).estado);
+        assertEquals("RESUELTA", buscar(1).getEstado());
 
         assertTrue(sis.cambiarEstado(2, "RECHAZADA"));
-        assertEquals("RECHAZADA", buscar(2).estado);
+        assertEquals("RECHAZADA", buscar(2).getEstado());
 
         assertTrue(sis.cambiarEstado(3, "EN_PROCESO"));
         assertTrue(sis.cambiarEstado(3, "RECHAZADA"));
-        assertEquals("RECHAZADA", buscar(3).estado);
+        assertEquals("RECHAZADA", buscar(3).getEstado());
     }
 
     @Test
@@ -273,13 +273,13 @@ class SistemaSolicitudesCaracterizacionTest {
         assertFalse(sis.cambiarEstado(1, "RESUELTA"));          // PENDIENTE -> RESUELTA
         assertFalse(sis.cambiarEstado(1, "PENDIENTE"));         // PENDIENTE -> PENDIENTE
         assertFalse(sis.cambiarEstado(1, "INVENTADO"));         // estado desconocido
-        assertEquals("PENDIENTE", buscar(1).estado);
+        assertEquals("PENDIENTE", buscar(1).getEstado());
         assertTrue(consola().contains("Error: transicion invalida de PENDIENTE a RESUELTA"));
 
         sis.cambiarEstado(1, "EN_PROCESO");
         assertFalse(sis.cambiarEstado(1, "PENDIENTE"));         // EN_PROCESO -> PENDIENTE
         assertFalse(sis.cambiarEstado(1, "EN_PROCESO"));        // EN_PROCESO -> EN_PROCESO
-        assertEquals("EN_PROCESO", buscar(1).estado);
+        assertEquals("EN_PROCESO", buscar(1).getEstado());
     }
 
     @Test
@@ -294,8 +294,8 @@ class SistemaSolicitudesCaracterizacionTest {
             assertFalse(sis.cambiarEstado(1, destino), "RESUELTA -> " + destino);
             assertFalse(sis.cambiarEstado(2, destino), "RECHAZADA -> " + destino);
         }
-        assertEquals("RESUELTA", buscar(1).estado);
-        assertEquals("RECHAZADA", buscar(2).estado);
+        assertEquals("RESUELTA", buscar(1).getEstado());
+        assertEquals("RECHAZADA", buscar(2).getEstado());
     }
 
     @Test
@@ -318,10 +318,10 @@ class SistemaSolicitudesCaracterizacionTest {
         assertTrue(sis.asignarResponsable(3, 3));
         assertTrue(sis.asignarResponsable(4, 1));
 
-        assertEquals("Laura Gomez", buscar(1).responsable.nombre);
-        assertEquals("Carlos Ruiz", buscar(2).responsable.nombre);
-        assertEquals("Marta Diaz", buscar(3).responsable.nombre);
-        assertEquals("Laura Gomez", buscar(4).responsable.nombre);
+        assertEquals("Laura Gomez", buscar(1).getResponsable().getNombre());
+        assertEquals("Carlos Ruiz", buscar(2).getResponsable().getNombre());
+        assertEquals("Marta Diaz", buscar(3).getResponsable().getNombre());
+        assertEquals("Laura Gomez", buscar(4).getResponsable().getNombre());
         assertTrue(consola().contains("Solicitud #1 asignada a Laura Gomez"));
     }
 
@@ -331,7 +331,7 @@ class SistemaSolicitudesCaracterizacionTest {
 
         assertFalse(sis.asignarResponsable(1, 2));
         assertFalse(sis.asignarResponsable(1, 3));
-        assertNull(buscar(1).responsable);
+        assertNull(buscar(1).getResponsable());
         assertTrue(consola().contains(
                 "Error: el responsable es del area Academica y la solicitud requiere Alumnado"));
     }
@@ -355,7 +355,7 @@ class SistemaSolicitudesCaracterizacionTest {
 
         assertTrue(sis.asignarResponsable(1, 1));
         assertTrue(sis.asignarResponsable(1, 4));
-        assertEquals("Pablo Soto", buscar(1).responsable.nombre);
+        assertEquals("Pablo Soto", buscar(1).getResponsable().getNombre());
     }
 
     @Test
@@ -363,7 +363,7 @@ class SistemaSolicitudesCaracterizacionTest {
         assertNull(sis.registrarResponsable(9, "X", "sin-arroba", "Alumnado"));
         assertNull(sis.registrarResponsable(9, "X", "x@ejemplo.edu", "Cocina"));
         assertNotNull(sis.registrarResponsable(9, "X", "x@ejemplo.edu", "Docencia"));
-        assertEquals(4, sis.resp.size());
+        assertEquals(4, sis.getResponsables().size());
     }
 
     // ---------- filtros ----------
@@ -520,7 +520,7 @@ class SistemaSolicitudesCaracterizacionTest {
         reg("L002", "EQUIVALENCIA", 2, false, HOY);
         salida.reset();
 
-        sis.imprimirLista(sis.lst);
+        sis.imprimirLista(sis.getSolicitudes());
 
         String nl = System.lineSeparator();
         assertEquals("#1 | L001 Estudiante L001 | CERTIFICADO | prioridad 2 (urgente) | PENDIENTE | Laura Gomez | 2026-03-10" + nl
@@ -564,16 +564,16 @@ class SistemaSolicitudesCaracterizacionTest {
         otro.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", "Alumnado");
         otro.cargar();
 
-        assertEquals(2, otro.lst.size());
-        assertEquals(1, otro.est.size());
-        Solicitud s1 = otro.lst.get(0);
-        assertEquals("EN_PROCESO", s1.estado);
-        assertEquals("Constancia, para beca", s1.descripcion);
-        assertEquals(2, s1.prioridad);
-        assertTrue(s1.urgente);
-        assertEquals("Laura Gomez", s1.responsable.nombre);
-        assertEquals(LocalDate.of(2026, 3, 1), s1.fechaCreacion);
-        assertNull(otro.lst.get(1).responsable);
+        assertEquals(2, otro.getSolicitudes().size());
+        assertEquals(1, otro.getEstudiantes().size());
+        Solicitud s1 = otro.getSolicitudes().get(0);
+        assertEquals("EN_PROCESO", s1.getEstado());
+        assertEquals("Constancia, para beca", s1.getDescripcion());
+        assertEquals(2, s1.getPrioridad());
+        assertTrue(s1.isUrgente());
+        assertEquals("Laura Gomez", s1.getResponsable().getNombre());
+        assertEquals(LocalDate.of(2026, 3, 1), s1.getFechaCreacion());
+        assertNull(otro.getSolicitudes().get(1).getResponsable());
 
         assertEquals(3, otro.registrarSolicitud("L009", "Zoe", "zoe@ejemplo.edu", "CERTIFICADO",
                 "d", 1, false, HOY));
@@ -585,7 +585,7 @@ class SistemaSolicitudesCaracterizacionTest {
 
         otro.cargar();
 
-        assertTrue(otro.lst.isEmpty());
+        assertTrue(otro.getSolicitudes().isEmpty());
     }
 
     @Test
@@ -595,7 +595,7 @@ class SistemaSolicitudesCaracterizacionTest {
         assertEquals(1, enMemoria.registrarSolicitud("L001", "Ana", "a@b.com", "CERTIFICADO", "d", 1, false, HOY));
         enMemoria.cargar();
 
-        assertEquals(1, enMemoria.lst.size());
+        assertEquals(1, enMemoria.getSolicitudes().size());
     }
 
     @Test
@@ -606,7 +606,7 @@ class SistemaSolicitudesCaracterizacionTest {
         int id = malo.registrarSolicitud("L001", "Ana", "a@b.com", "CERTIFICADO", "d", 1, false, HOY);
 
         assertEquals(1, id);
-        assertEquals(1, malo.lst.size());
+        assertEquals(1, malo.getSolicitudes().size());
     }
 
 }

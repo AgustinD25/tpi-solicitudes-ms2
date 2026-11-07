@@ -79,7 +79,7 @@ class DefectosLatentesCaracterizacionTest {
         int id = sis.registrarSolicitud("L2", "Beto", "b@b.com", "CERTIFICADO", null, 1, false, FECHA);
 
         assertEquals(2, id);                         // el metodo informa exito
-        assertEquals(2, sis.lst.size());             // y la memoria tiene las 2
+        assertEquals(2, sis.getSolicitudes().size());             // y la memoria tiene las 2
         assertEquals(0, lineas(archivo));            // pero el archivo quedo vacio: se perdio la 1ra tambien
     }
 
@@ -113,8 +113,8 @@ class DefectosLatentesCaracterizacionTest {
         SistemaSolicitudes recargado = new SistemaSolicitudes(archivo.toString());
         recargado.cargar();
 
-        assertEquals(3, sis.lst.size());
-        assertEquals(1, recargado.lst.size());       // solo sobrevive la anterior a la linea corrupta
+        assertEquals(3, sis.getSolicitudes().size());
+        assertEquals(1, recargado.getSolicitudes().size());       // solo sobrevive la anterior a la linea corrupta
     }
 
     @Test
@@ -128,8 +128,8 @@ class DefectosLatentesCaracterizacionTest {
         SistemaSolicitudes recargado = new SistemaSolicitudes(archivo.toString());
         recargado.cargar();
 
-        assertEquals(3, sis.lst.size());
-        assertEquals(1, recargado.lst.size());
+        assertEquals(3, sis.getSolicitudes().size());
+        assertEquals(1, recargado.getSolicitudes().size());
     }
 
     // ---------- D7: cargar() no es idempotente ----------
@@ -144,10 +144,10 @@ class DefectosLatentesCaracterizacionTest {
         sis.cargar();
         sis.cargar();
 
-        assertEquals(2, sis.lst.size());
-        assertEquals(1, sis.lst.get(0).id);
-        assertEquals(1, sis.lst.get(1).id);          // mismo id repetido
-        assertEquals(1, sis.est.size());             // el estudiante si se reutiliza
+        assertEquals(2, sis.getSolicitudes().size());
+        assertEquals(1, sis.getSolicitudes().get(0).getId());
+        assertEquals(1, sis.getSolicitudes().get(1).getId());          // mismo id repetido
+        assertEquals(1, sis.getEstudiantes().size());             // el estudiante si se reutiliza
     }
 
     // ---------- Smell 14: acoplamiento temporal ----------
@@ -168,7 +168,7 @@ class DefectosLatentesCaracterizacionTest {
         ordenInvertido.cargar();
         ordenInvertido.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", "Alumnado");
 
-        assertEquals("Laura Gomez", ordenCorrecto.lst.get(0).responsable.nombre);
-        assertNull(ordenInvertido.lst.get(0).responsable);   // sin error ni aviso
+        assertEquals("Laura Gomez", ordenCorrecto.getSolicitudes().get(0).getResponsable().getNombre());
+        assertNull(ordenInvertido.getSolicitudes().get(0).getResponsable());   // sin error ni aviso
     }
 }
