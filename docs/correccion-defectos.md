@@ -35,3 +35,19 @@ Cada entrada dice: qué pasaba, qué pasa ahora, qué test cambió y por qué es
 - **Código:** `TipoSolicitud.desde(null)` devuelve `null` en vez de lanzar (se quitó el `Objects.requireNonNull`).
 - **Test cambiado:** `tipoNuloLanzaNullPointerException` → `tipoNuloEsTipoInvalidoYDevuelveMenosTres`.
 - **Por qué mejora:** la API no debería caerse por un dato de entrada; todos los errores de datos se informan igual.
+
+---
+
+## D5. Un estado nulo rompía el cambio de estado con una excepción
+
+- **Antes:** `cambiarEstado(id, null)` lanzaba `NullPointerException` (salvo en solicitudes ya cerradas, donde devolvía
+  `false`): comportamiento irregular según el estado de la solicitud.
+- **Ahora:** un estado nulo es una transición inválida más, en cualquier estado: devuelve `false` y muestra
+  `Error: transicion invalida de PENDIENTE a null`. El estado de la solicitud no cambia.
+- **Código:** se quitó el `Objects.requireNonNull` de `SolicitudService.cambiarEstado`, que se había dejado a
+  propósito durante el refactoring.
+- **Test cambiado:** `d5_cambiarEstadoConEstadoNuloLanzaNullPointerException` →
+  `d5_cambiarEstadoConEstadoNuloEsUnaTransicionInvalida`. Para poder comprobar el mensaje, la clase de test pasó a
+  guardar la salida de consola en un campo (antes la descartaba).
+- **Por qué mejora:** mismo criterio que D2: los datos inválidos se informan, no rompen. Además elimina la
+  irregularidad entre estados abiertos y cerrados.

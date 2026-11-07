@@ -2,7 +2,6 @@ package com.tup.solicitudes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -45,11 +44,6 @@ public class SolicitudService {
 
     public Solicitud cambiarEstado(int id, String nuevoEstado) {
         Solicitud solicitud = buscarPorId(id);
-        if (!solicitud.getEstadoSolicitud().esFinal()) {
-            // Defecto D5 conservado a proposito: con estado nulo la version original lanzaba
-            // NullPointerException (salvo si la solicitud ya estaba en un estado final).
-            Objects.requireNonNull(nuevoEstado);
-        }
         EstadoSolicitud destino = EstadoSolicitud.desde(nuevoEstado);
         if (destino == null || !solicitud.puedePasarA(destino)) {
             throw new TransicionInvalidaException(solicitud.getEstado(), nuevoEstado);

@@ -42,12 +42,14 @@ class DefectosLatentesCaracterizacionTest {
     private Path tmp;
 
     private PrintStream salidaOriginal;
+    private ByteArrayOutputStream salida;
 
     @BeforeEach
     void prepararEntorno() throws IOException {
         tmp = Files.createTempDirectory("solicitudes-defectos-");
         salidaOriginal = System.out;
-        System.setOut(new PrintStream(new ByteArrayOutputStream(), true, StandardCharsets.UTF_8));
+        salida = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(salida, true, StandardCharsets.UTF_8));
     }
 
     @AfterEach
@@ -85,12 +87,19 @@ class DefectosLatentesCaracterizacionTest {
 
     // ---------- D5: estado nulo (solo por API) ----------
 
+    // CAMBIO DELIBERADO (correccion del defecto D5): antes se llamaba
+    // d5_cambiarEstadoConEstadoNuloLanzaNullPointerException y exigia la excepcion.
+    // Ahora un estado nulo es una transicion invalida mas: devuelve false y avisa.
     @Test
-    void d5_cambiarEstadoConEstadoNuloLanzaNullPointerException() {
+    void d5_cambiarEstadoConEstadoNuloEsUnaTransicionInvalida() {
         SistemaSolicitudes sis = new SistemaSolicitudes(null);
         sis.registrarSolicitud("L1", "Ana", "a@b.com", "CERTIFICADO", "ok", 1, false, FECHA);
+        salida.reset();
 
-        assertThrows(NullPointerException.class, () -> sis.cambiarEstado(1, null));
+        assertFalse(sis.cambiarEstado(1, null));
+
+        assertEquals("PENDIENTE", sis.getSolicitudes().get(0).getEstado());
+        assertEquals("Error: transicion invalida de PENDIENTE a null" + System.lineSeparator(), salida.toString(StandardCharsets.UTF_8));
     }
 
     @Test
