@@ -1,10 +1,10 @@
 package com.tup.solicitudes;
 
 public class Responsable {
-    public int id;
-    public String nombre;
-    public String email;
-    public String area;
+    private final int id;
+    private final String nombre;
+    private final String email;
+    private final String area;
 
     public Responsable(int id, String nombre, String email, String area) {
         this.id = id;

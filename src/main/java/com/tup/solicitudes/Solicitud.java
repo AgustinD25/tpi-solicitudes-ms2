@@ -3,15 +3,26 @@ package com.tup.solicitudes;
 import java.time.LocalDate;
 
 public class Solicitud {
-    public int id;
-    public Estudiante estudiante;
-    public TipoSolicitud tipo;
-    public String descripcion;
-    public int prioridad;
-    public boolean urgente;
-    public EstadoSolicitud estado;
-    public Responsable responsable;
-    public LocalDate fechaCreacion;
+    private final int id;
+    private final Estudiante estudiante;
+    private final TipoSolicitud tipo;
+    private final String descripcion;
+    private final int prioridad;
+    private final boolean urgente;
+    private final LocalDate fechaCreacion;
+    private EstadoSolicitud estado = EstadoSolicitud.PENDIENTE;
+    private Responsable responsable;
+
+    public Solicitud(int id, Estudiante estudiante, TipoSolicitud tipo, String descripcion,
+                     int prioridad, boolean urgente, LocalDate fechaCreacion) {
+        this.id = id;
+        this.estudiante = estudiante;
+        this.tipo = tipo;
+        this.descripcion = descripcion;
+        this.prioridad = prioridad;
+        this.urgente = urgente;
+        this.fechaCreacion = fechaCreacion;
+    }
 
     public int getId() {
         return id;
@@ -55,6 +66,33 @@ public class Solicitud {
 
     public LocalDate getFechaCreacion() {
         return fechaCreacion;
+    }
+
+    public boolean puedePasarA(EstadoSolicitud destino) {
+        return estado.puedePasarA(destino);
+    }
+
+    /** Cambia de estado respetando las transiciones permitidas. */
+    public void pasarA(EstadoSolicitud destino) {
+        if (!estado.puedePasarA(destino)) {
+            throw new IllegalStateException("transicion invalida de " + estado + " a " + destino);
+        }
+        estado = destino;
+    }
+
+    /** Una solicitud solo puede ser atendida por un responsable del area que corresponde a su tipo. */
+    public boolean puedeSerAtendidaPor(Responsable candidato) {
+        return candidato.getArea().equals(tipo.getAreaResponsable());
+    }
+
+    public void asignarResponsable(Responsable nuevoResponsable) {
+        this.responsable = nuevoResponsable;
+    }
+
+    /** Usado solo al cargar desde el archivo: reconstruye el estado y el responsable guardados. */
+    void restaurar(EstadoSolicitud estadoGuardado, Responsable responsableGuardado) {
+        this.estado = estadoGuardado;
+        this.responsable = responsableGuardado;
     }
 
     public boolean estaVencida(LocalDate hoy) {

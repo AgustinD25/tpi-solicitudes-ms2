@@ -63,7 +63,7 @@ public class Main {
                         int id = Integer.parseInt(sc.nextLine().trim());
                         System.out.println("Responsables:");
                         for (Responsable r : sis.resp) {
-                            System.out.println("  " + r.id + " - " + r.nombre + " (" + r.area + ")");
+                            System.out.println("  " + r.getId() + " - " + r.getNombre() + " (" + r.getArea() + ")");
                         }
                         System.out.print("Id de responsable: ");
                         int idr = Integer.parseInt(sc.nextLine().trim());

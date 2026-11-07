@@ -1,9 +1,9 @@
 package com.tup.solicitudes;
 
 public class Estudiante {
-    public String legajo;
-    public String nombre;
-    public String email;
+    private final String legajo;
+    private final String nombre;
+    private final String email;
 
     public Estudiante(String legajo, String nombre, String email) {
         this.legajo = legajo;

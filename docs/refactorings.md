@@ -427,6 +427,66 @@ solicitud.estado = destino;
 
 ---
 
+## R8. Encapsulate Field + Move Method: entidades con campos privados y comportamiento propio
+
+- **Smell que cierra:** 13 (Data Class / encapsulamiento roto). Principio: encapsulamiento, SRP.
+- **Archivos:** `Solicitud.java`, `Estudiante.java`, `Responsable.java`, `ReporteSimple.java`, `Main.java`,
+  `SistemaSolicitudes.java`.
+- **Qué se hizo:** todos los campos de las tres entidades son privados. Los datos que no cambian son `final` y se
+  fijan por constructor (antes `Solicitud` podía existir sin estado ni fecha). Las reglas que estaban en la clase
+  dios y solo usaban datos de la solicitud pasaron a `Solicitud`.
+
+| Antes (en `SistemaSolicitudes`) | Después (en `Solicitud`) |
+|---|---|
+| `solicitud.estado = destino` sin validar | `pasarA(destino)`: lanza `IllegalStateException` si la transición no es válida |
+| `responsable.area.equals(areaRequerida)` | `puedeSerAtendidaPor(responsable)` |
+| `solicitud.responsable = responsable` | `asignarResponsable(responsable)` |
+| `new Solicitud()` + 9 asignaciones de campos | `new Solicitud(id, estudiante, tipo, descripcion, prioridad, urgente, fecha)` |
+
+Antes:
+```java
+public class Solicitud {
+    public int id;
+    public Estudiante estudiante;
+    public EstadoSolicitud estado;
+    ...
+}
+Solicitud nueva = new Solicitud();
+nueva.id = ultimoId;
+nueva.estudiante = estudiante;
+... (7 asignaciones más)
+```
+
+Después:
+```java
+public class Solicitud {
+    private final int id;
+    private final Estudiante estudiante;
+    private EstadoSolicitud estado = EstadoSolicitud.PENDIENTE;
+    ...
+    public void pasarA(EstadoSolicitud destino) {
+        if (!estado.puedePasarA(destino)) {
+            throw new IllegalStateException("transicion invalida de " + estado + " a " + destino);
+        }
+        estado = destino;
+    }
+}
+return new Solicitud(ultimoId, estudiante, TipoSolicitud.desde(datos.tipo()), datos.descripcion(),
+        prioridadFinal, datos.urgente(), datos.fecha());
+```
+
+- **Por qué:** ninguna clase puede dejar una solicitud en un estado inválido salteándose las reglas (antes bastaba
+  `s.estado = "XX"`). `SistemaSolicitudes` valida con `puedePasarA` y mensajes como siempre; `pasarA` es la red de
+  seguridad de la entidad.
+- **Detalle:** `cargar()` reconstruye el estado y el responsable guardados con un método de paquete,
+  `restaurar(...)`, para no abrir setters públicos. El constructor de `Solicitud` tiene 7 parámetros; no es la
+  lista larga que se corrigió en R5 (esos eran datos de entrada del usuario sin nombre), pero se podrá reducir cuando
+  el repositorio se encargue de reconstruir entidades.
+- **Pendiente:** `Estudiante.emailValido` y `Responsable.emailValido` siguen duplicados (smell 7).
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
