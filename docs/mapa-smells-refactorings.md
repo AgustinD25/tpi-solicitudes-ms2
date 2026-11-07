@@ -28,7 +28,7 @@ mantenimiento). Los smells 4 y 5 (tipo y estado como `String`) cuentan juntos po
 | 8 | Números mágicos | R1 constantes con nombre | `a9b75db` |
 | 10 | Nombres pobres | R2 Rename; R9 nombres definitivos | `524d3ce`, `6dff016` |
 | 13 | Data Class / encapsulamiento roto | R8 entidades con campos privados y comportamiento, R9 listas privadas | `23be11a`, `6dff016` |
-| 14 | Acoplamiento temporal (`cargar()` depende del orden de las llamadas) | **Abierto**: se cierra con la corrección del defecto correspondiente | (pendiente) |
+| 14 | Acoplamiento temporal (`cargar()` depende del orden de las llamadas) | Cerrado al corregir los defectos: `RepositorioCsv` completa el responsable cuando aparece (ver `docs/correccion-defectos.md`) | ver `docs/correccion-defectos.md` |
 
 ## Cobertura de lo que pide la consigna
 

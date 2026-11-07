@@ -194,8 +194,8 @@ public class SistemaSolicitudes {
     // ---------- persistencia ----------
 
     /**
-     * Carga lo guardado. Los responsables deben estar registrados antes: si no, las solicitudes cargadas quedan
-     * sin responsable (acoplamiento temporal, smell 14, conservado hasta corregir el defecto).
+     * Carga lo guardado. No importa si los responsables se registran antes o despues: las solicitudes cargadas
+     * completan su responsable en cuanto este existe.
      */
     public void cargar() {
         solicitudRepository.cargar();

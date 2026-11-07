@@ -194,8 +194,12 @@ class DefectosLatentesCaracterizacionTest {
 
     // ---------- Smell 14: acoplamiento temporal ----------
 
+    // CAMBIO DELIBERADO (cierre del smell 14): antes se llamaba
+    // smell14_cargarAntesDeRegistrarResponsablesDejaLasAsignacionesEnNull y exigia que, con cargar() antes de
+    // registrar los responsables, la asignacion quedara en null sin aviso. Ahora el orden no importa: la solicitud
+    // recuerda el id y se completa sola cuando el responsable aparece.
     @Test
-    void smell14_cargarAntesDeRegistrarResponsablesDejaLasAsignacionesEnNull() {
+    void smell14_elOrdenDeCargarYRegistrarResponsablesNoImporta() {
         Path archivo = csv("temporal.csv");
         SistemaSolicitudes original = new SistemaSolicitudes(archivo.toString());
         original.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", "Alumnado");
@@ -211,6 +215,29 @@ class DefectosLatentesCaracterizacionTest {
         ordenInvertido.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", "Alumnado");
 
         assertEquals("Laura Gomez", ordenCorrecto.getSolicitudes().get(0).getResponsable().getNombre());
-        assertNull(ordenInvertido.getSolicitudes().get(0).getResponsable());   // sin error ni aviso
+        assertEquals("Laura Gomez", ordenInvertido.getSolicitudes().get(0).getResponsable().getNombre());
+    }
+
+    // Test nuevo: mientras el responsable no este registrado, volver a guardar el archivo no pierde la asignacion.
+    @Test
+    void smell14_laAsignacionPendienteNoSePierdeAlVolverAGuardar() {
+        Path archivo = csv("temporal2.csv");
+        SistemaSolicitudes original = new SistemaSolicitudes(archivo.toString());
+        original.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", "Alumnado");
+        original.registrarSolicitud("L1", "Ana", "a@b.com", "CERTIFICADO", "ok", 1, false, FECHA);
+        original.asignarResponsable(1, 1);
+
+        // arranca sin registrar responsables y guarda otra solicitud (reescribe el archivo)
+        SistemaSolicitudes sinResponsables = new SistemaSolicitudes(archivo.toString());
+        sinResponsables.cargar();
+        sinResponsables.registrarSolicitud("L2", "Beto", "b@b.com", "CERTIFICADO", "ok", 1, false, FECHA);
+        assertNull(sinResponsables.getSolicitudes().get(0).getResponsable());   // todavia no existe Laura
+
+        // un arranque posterior, ya con Laura registrada, recupera la asignacion original
+        SistemaSolicitudes conResponsables = new SistemaSolicitudes(archivo.toString());
+        conResponsables.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", "Alumnado");
+        conResponsables.cargar();
+        assertEquals(2, conResponsables.getSolicitudes().size());
+        assertEquals("Laura Gomez", conResponsables.getSolicitudes().get(0).getResponsable().getNombre());
     }
 }

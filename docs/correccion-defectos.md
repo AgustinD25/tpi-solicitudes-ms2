@@ -130,3 +130,40 @@ Se corrigen en un solo commit porque comparten la causa: el formato del CSV no e
   - Test nuevo `d8_laDescripcionConCaracteresEspecialesVuelveExactamenteIgual`: prueba `;`, `,`, barra invertida y
     salto de línea en una misma descripción.
 - **Por qué mejora:** ya no se pierden datos ni se alteran por el contenido que escribe el usuario.
+
+---
+
+## Smell 14. Acoplamiento temporal: `cargar()` dependía de registrar antes a los responsables
+
+- **Antes:** el archivo guarda solo el id del responsable. Si `cargar()` se llamaba antes de registrar a los
+  responsables (como en `Main`, que depende de ese orden), las solicitudes quedaban con responsable `null` sin ningún
+  aviso, y la próxima vez que se guardaba el archivo, la asignación se perdía para siempre.
+- **Ahora:** el orden no importa. Si al cargar el responsable todavía no está registrado, `RepositorioCsv` recuerda
+  el id y completa la solicitud en cuanto el responsable aparece (al listar o buscar). Mientras tanto, al volver a
+  guardar el archivo se conserva el id original. Si mientras tanto se le asigna otro responsable a mano, gana la
+  asignación nueva.
+- **Código:** `RepositorioCsv` (`responsablePendiente`, `resolverResponsablesPendientes`, `idResponsableParaGuardar`).
+- **Tests:**
+  - Cambiado: `smell14_cargarAntesDeRegistrarResponsablesDejaLasAsignacionesEnNull` →
+    `smell14_elOrdenDeCargarYRegistrarResponsablesNoImporta` (antes exigía `null`; ahora exige "Laura Gomez").
+  - Nuevo: `smell14_laAsignacionPendienteNoSePierdeAlVolverAGuardar`.
+- **Por qué mejora:** se elimina una dependencia oculta del orden de llamadas (el objeto ya no queda en un estado
+  inválido hasta que alguien llame en el orden correcto) y una pérdida de datos silenciosa.
+
+---
+
+## Resumen
+
+| Defecto | Estado | Commit |
+|---|---|---|
+| D1 asignar a solicitud cerrada | Corregido | `8b11059` |
+| D2 tipo nulo | Corregido | `63dadc0` |
+| D3 errores de archivo ignorados | Corregido | `a6e27de` |
+| D4 pérdida de datos con descripción nula | Corregido | `10d2c8b` |
+| D5 estado nulo | Corregido | `e4d69d5` |
+| D6 `;` en nombre o email / D8 `;` en descripción | Corregidos | `0883f46` |
+| D7 `cargar()` no idempotente | Corregido | `f5aaf57` |
+| Smell 14 acoplamiento temporal | Cerrado | commit "Cierre del smell 14" (el siguiente a D6 y D8) |
+
+Los 51 tests pasan después de cada commit. En cada uno solo se cambiaron los tests del defecto corregido, y cada
+cambio está marcado con un comentario `CAMBIO DELIBERADO` en el propio test.

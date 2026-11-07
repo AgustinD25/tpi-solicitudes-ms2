@@ -774,6 +774,6 @@ public class ReporteSimple implements ExportadorCSV, ExportadorJSON { ... }    /
 | 8, 10, 6, 2, 3 | Cerrados (R1 a R5, R9) | |
 | 4, 5, 13 | Cerrados (R6 a R9) | Posibles gracias a la excepción E1 |
 | 7, 11, 1 | Cerrados (R10 a R13) | |
-| 9 (errores) | Cerrado en la lógica de negocio (R12) | Los errores de archivo siguen tragados a propósito (D3, D4, D6, D7) |
-| 14 (acoplamiento temporal) | **Abierto** | Se cierra con la corrección del defecto: `cargar()` antes de registrar responsables |
+| 9 (errores) | Cerrado (R12 y correcciones D3 y D4) | Los errores de archivo ahora se informan; ver `docs/correccion-defectos.md` |
+| 14 (acoplamiento temporal) | Cerrado | Ver `docs/correccion-defectos.md` |
 | 12 (ISP/LSP en la exportación) | Cerrado (R14) | `ExportacionCaracterizacionTest` reescrito a propósito |

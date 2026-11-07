@@ -6,7 +6,11 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -14,7 +18,9 @@ import java.util.function.Function;
  * Repositorio que ademas guarda las solicitudes en un archivo CSV (una linea por solicitud):
  * id;legajo;nombre;email;tipo;descripcion;prioridad;urgente;estado;idResponsable;fecha
  *
- * Los responsables no se guardan en el archivo, solo su id; al cargar se resuelven con la funcion recibida.
+ * Los responsables no se guardan en el archivo, solo su id. Se resuelven con la funcion recibida, y si todavia no
+ * estan registrados al cargar, la solicitud recuerda el id y se completa sola en cuanto el responsable aparece (el
+ * orden de las llamadas no importa). Mientras tanto, el id se conserva al volver a guardar el archivo.
  *
  * Si no se puede leer o escribir el archivo, el repositorio NO lanza excepciones ni se queda callado: informa el
  * problema con la funcion {@code avisarError} y las operaciones siguen funcionando en memoria.
@@ -26,6 +32,8 @@ public class RepositorioCsv extends RepositorioEnMemoria {
     private final String rutaArchivo;
     private final Function<Integer, Responsable> buscarResponsable;
     private final Consumer<String> avisarError;
+    // Solicitudes cargadas cuyo responsable todavia no estaba registrado: solicitud -> id guardado en el archivo
+    private final Map<Solicitud, Integer> responsablePendiente = new IdentityHashMap<>();
 
     public RepositorioCsv(String rutaArchivo, Function<Integer, Responsable> buscarResponsable,
                           Consumer<String> avisarError) {
@@ -35,9 +43,45 @@ public class RepositorioCsv extends RepositorioEnMemoria {
     }
 
     @Override
+    public List<Solicitud> listarTodas() {
+        resolverResponsablesPendientes();
+        return super.listarTodas();
+    }
+
+    @Override
+    public Optional<Solicitud> buscarPorId(int id) {
+        resolverResponsablesPendientes();
+        return super.buscarPorId(id);
+    }
+
+    @Override
     public void guardar(Solicitud nueva) {
         super.guardar(nueva);
         escribir();
+    }
+
+    @Override
+    protected void vaciar() {
+        super.vaciar();
+        responsablePendiente.clear();
+    }
+
+    // Completa las solicitudes cuyo responsable se registro despues de cargar el archivo.
+    private void resolverResponsablesPendientes() {
+        Iterator<Map.Entry<Solicitud, Integer>> pendientes = responsablePendiente.entrySet().iterator();
+        while (pendientes.hasNext()) {
+            Map.Entry<Solicitud, Integer> pendiente = pendientes.next();
+            Solicitud solicitud = pendiente.getKey();
+            if (solicitud.getResponsable() != null) {
+                pendientes.remove();          // ya se le asigno uno a mano: gana la asignacion nueva
+                continue;
+            }
+            Responsable responsable = buscarResponsable.apply(pendiente.getValue());
+            if (responsable != null) {
+                solicitud.asignarResponsable(responsable);
+                pendientes.remove();
+            }
+        }
     }
 
     @Override
@@ -69,8 +113,16 @@ public class RepositorioCsv extends RepositorioEnMemoria {
                 + FormatoCsv.escapar(estudiante.getEmail()) + ";" + solicitud.getTipo() + ";"
                 + FormatoCsv.escapar(descripcion) + ";"
                 + solicitud.getPrioridad() + ";" + solicitud.isUrgente() + ";" + solicitud.getEstado() + ";"
-                + (solicitud.getResponsable() == null ? ID_SIN_RESPONSABLE : solicitud.getResponsable().getId())
+                + idResponsableParaGuardar(solicitud)
                 + ";" + solicitud.getFechaCreacion() + "\n";
+    }
+
+    // Si el responsable aun no esta registrado se conserva el id del archivo, para no perder la asignacion.
+    private int idResponsableParaGuardar(Solicitud solicitud) {
+        if (solicitud.getResponsable() != null) {
+            return solicitud.getResponsable().getId();
+        }
+        return responsablePendiente.getOrDefault(solicitud, ID_SIN_RESPONSABLE);
     }
 
     /**
@@ -107,10 +159,14 @@ public class RepositorioCsv extends RepositorioEnMemoria {
                 if (estado == null) {
                     throw new IllegalArgumentException("estado desconocido en el archivo: " + campos.get(8));
                 }
-                Responsable responsable = buscarResponsable.apply(Integer.parseInt(campos.get(9)));
+                int idResponsable = Integer.parseInt(campos.get(9));
+                Responsable responsable = buscarResponsable.apply(idResponsable);
                 LocalDate fechaCreacion = LocalDate.parse(campos.get(10));
                 Solicitud solicitud = new Solicitud(id, estudiante, tipo, campos.get(5), prioridad, urgente, fechaCreacion);
                 solicitud.restaurar(estado, responsable);
+                if (responsable == null && idResponsable != ID_SIN_RESPONSABLE) {
+                    responsablePendiente.put(solicitud, idResponsable);
+                }
                 incorporar(solicitud);
             }
         } catch (Exception ex) {
