@@ -487,10 +487,50 @@ return new Solicitud(ultimoId, estudiante, TipoSolicitud.desde(datos.tipo()), da
 
 ---
 
+## R9. Encapsulate Field + Rename: listas privadas y nombres definitivos
+
+- **Smells que cierra:** 13 (parte que faltaba: las listas públicas de la clase dios) y 10 (nombres, parte que
+  R2 había dejado). Principio: encapsulamiento.
+- **Archivos:** `SistemaSolicitudes.java`, `Main.java`.
+- **Qué se hizo:** `lst`, `est` y `resp` pasaron a `solicitudes`, `estudiantes` y `responsables`, privadas y `final`
+  (también `ultimoId` y `rutaArchivo`). Desde afuera se leen con `getSolicitudes()`, `getEstudiantes()` y
+  `getResponsables()`, que devuelven copias no modificables. `Main` dejó de leer los campos y usa los getters.
+
+Antes:
+```java
+public List<Solicitud> lst = new ArrayList<>();
+public List<Estudiante> est = new ArrayList<>();
+public List<Responsable> resp = new ArrayList<>();
+int ultimoId = 0;
+...
+for (Responsable r : sis.resp) { ... }        // Main
+sis.imprimirLista(sis.lst);                    // Main
+```
+
+Después:
+```java
+private final List<Solicitud> solicitudes = new ArrayList<>();
+private final List<Estudiante> estudiantes = new ArrayList<>();
+private final List<Responsable> responsables = new ArrayList<>();
+private int ultimoId = 0;
+...
+for (Responsable r : sis.getResponsables()) { ... }
+sis.imprimirLista(sis.getSolicitudes());
+```
+
+- **Por qué:** esto era posible gracias a la excepción E1 (los tests ya leían por getters). Antes, cualquier clase
+  podía hacer `sis.lst.clear()` o agregar una solicitud salteándose todas las reglas.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas; los archivos de test no cambiaron desde el commit de la
+  excepción E1.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
 |---|---|---|
-| 8, 10 (parcial), 6, 2, 3 | Cerrados (R1 a R5) | `lst`, `est` y `resp` siguen públicos hasta encapsular |
-| 4, 5, 13 (enums y encapsulamiento) | **Desbloqueados** por E1 | Siguiente paso: usar los getters en `Main`, pasar a enums y privatizar campos |
-| 7 (duplicación), 9 (errores), 11 (DIP), 14 (acoplamiento temporal), 1 (God Class), 12 (ISP/LSP) | Pendientes | |
+| 8, 10, 6, 2, 3 | Cerrados (R1 a R5, R9) | |
+| 4, 5, 13 | Cerrados (R6 a R9) | Posibles gracias a la excepción E1 |
+| 7 (duplicación de `emailValido` y de las búsquedas) | Pendiente | |
+| 9 (errores), 11 (DIP), 14 (acoplamiento temporal), 1 (God Class) | Pendientes | Van juntos: repositorio + excepciones de dominio + fachada |
+| 12 (ISP/LSP en la exportación) | Pendiente | Requiere reescribir `ExportacionCaracterizacionTest` a propósito (ver `CLAUDE.md`) |

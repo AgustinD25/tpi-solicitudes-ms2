@@ -26,12 +26,11 @@ public class SistemaSolicitudes {
     // Formato del CSV: valor de la columna "responsable" cuando no hay uno asignado
     static final int ID_SIN_RESPONSABLE = -1;
 
-    // lst, est y resp siguen publicos hasta el proximo refactoring (Main los usa)
-    public List<Solicitud> lst = new ArrayList<>();
-    public List<Estudiante> est = new ArrayList<>();
-    public List<Responsable> resp = new ArrayList<>();
-    int ultimoId = 0;
-    String rutaArchivo;
+    private final List<Solicitud> solicitudes = new ArrayList<>();
+    private final List<Estudiante> estudiantes = new ArrayList<>();
+    private final List<Responsable> responsables = new ArrayList<>();
+    private int ultimoId = 0;
+    private final String rutaArchivo;
 
     public SistemaSolicitudes(String rutaArchivo) {
         this.rutaArchivo = rutaArchivo;
@@ -39,15 +38,15 @@ public class SistemaSolicitudes {
 
     // Las listas se exponen como copias no modificables: quien las lee no puede alterar el estado interno.
     public List<Solicitud> getSolicitudes() {
-        return List.copyOf(lst);
+        return List.copyOf(solicitudes);
     }
 
     public List<Estudiante> getEstudiantes() {
-        return List.copyOf(est);
+        return List.copyOf(estudiantes);
     }
 
     public List<Responsable> getResponsables() {
-        return List.copyOf(resp);
+        return List.copyOf(responsables);
     }
 
     // ---------- responsables ----------
@@ -62,7 +61,7 @@ public class SistemaSolicitudes {
             System.out.println("Error: area invalida");
             return null;
         }
-        resp.add(responsable);
+        responsables.add(responsable);
         return responsable;
     }
 
@@ -98,7 +97,7 @@ public class SistemaSolicitudes {
         Estudiante estudiante = buscarOCrearEstudiante(estudianteIngresado);
         int prioridadFinal = calcularPrioridad(datos.prioridad(), datos.urgente());
         Solicitud nueva = crearSolicitud(estudiante, datos, prioridadFinal);
-        lst.add(nueva);
+        solicitudes.add(nueva);
         guardar();
         System.out.println("Solicitud #" + nueva.getId() + " registrada (" + datos.tipo()
                 + ", prioridad " + prioridadFinal + ")");
@@ -128,7 +127,7 @@ public class SistemaSolicitudes {
 
     private int contarPendientes(String legajo) {
         int pendientes = 0;
-        for (Solicitud solicitud : lst) {
+        for (Solicitud solicitud : solicitudes) {
             if (solicitud.getEstudiante().getLegajo().equals(legajo)
                     && solicitud.getEstadoSolicitud() == EstadoSolicitud.PENDIENTE) {
                 pendientes++;
@@ -140,14 +139,14 @@ public class SistemaSolicitudes {
     // Devuelve el estudiante ya registrado con ese legajo o, si no existe, registra el ingresado.
     private Estudiante buscarOCrearEstudiante(Estudiante estudianteIngresado) {
         Estudiante estudiante = null;
-        for (Estudiante candidato : est) {
+        for (Estudiante candidato : estudiantes) {
             if (candidato.getLegajo().equals(estudianteIngresado.getLegajo())) {
                 estudiante = candidato;
             }
         }
         if (estudiante == null) {
             estudiante = estudianteIngresado;
-            est.add(estudiante);
+            estudiantes.add(estudiante);
         }
         return estudiante;
     }
@@ -199,7 +198,7 @@ public class SistemaSolicitudes {
             return false;
         }
         Responsable responsable = null;
-        for (Responsable candidato : resp) {
+        for (Responsable candidato : responsables) {
             if (candidato.getId() == idResponsable) {
                 responsable = candidato;
             }
@@ -222,7 +221,7 @@ public class SistemaSolicitudes {
     // ---------- busquedas ----------
 
     Solicitud buscarSolicitudPorId(int id) {
-        for (Solicitud solicitud : lst) {
+        for (Solicitud solicitud : solicitudes) {
             if (solicitud.getId() == id) {
                 return solicitud;
             }
@@ -232,7 +231,7 @@ public class SistemaSolicitudes {
 
     public List<Solicitud> filtrarPorEstado(String estado) {
         List<Solicitud> resultado = new ArrayList<>();
-        for (Solicitud solicitud : lst) {
+        for (Solicitud solicitud : solicitudes) {
             if (solicitud.getEstado().equals(estado)) {
                 resultado.add(solicitud);
             }
@@ -242,7 +241,7 @@ public class SistemaSolicitudes {
 
     public List<Solicitud> filtrarPorTipo(String tipo) {
         List<Solicitud> resultado = new ArrayList<>();
-        for (Solicitud solicitud : lst) {
+        for (Solicitud solicitud : solicitudes) {
             if (solicitud.getTipo().equals(tipo)) {
                 resultado.add(solicitud);
             }
@@ -252,7 +251,7 @@ public class SistemaSolicitudes {
 
     public List<Solicitud> filtrarPorPrioridad(int prioridad) {
         List<Solicitud> resultado = new ArrayList<>();
-        for (Solicitud solicitud : lst) {
+        for (Solicitud solicitud : solicitudes) {
             if (solicitud.getPrioridad() == prioridad) {
                 resultado.add(solicitud);
             }
@@ -278,7 +277,7 @@ public class SistemaSolicitudes {
         for (TipoSolicitud tipo : TipoSolicitud.values()) {
             porTipo.put(tipo, 0);
         }
-        for (Solicitud solicitud : lst) {
+        for (Solicitud solicitud : solicitudes) {
             porEstado.merge(solicitud.getEstadoSolicitud(), 1, Integer::sum);
             porTipo.merge(solicitud.getTipoSolicitud(), 1, Integer::sum);
         }
@@ -294,7 +293,7 @@ public class SistemaSolicitudes {
         }
         sb.append("Vencidas:\n");
         int cantidadVencidas = 0;
-        for (Solicitud solicitud : lst) {
+        for (Solicitud solicitud : solicitudes) {
             if (solicitud.estaVencida(hoy)) {
                 sb.append("  #").append(solicitud.getId()).append(" ").append(solicitud.getTipo())
                   .append(" (").append(solicitud.getEstudiante().getLegajo()).append(") creada ")
@@ -323,11 +322,11 @@ public class SistemaSolicitudes {
                 + " | " + solicitud.getFechaCreacion());
     }
 
-    public void imprimirLista(List<Solicitud> solicitudes) {
-        if (solicitudes.isEmpty()) {
+    public void imprimirLista(List<Solicitud> listado) {
+        if (listado.isEmpty()) {
             System.out.println("(sin resultados)");
         }
-        for (Solicitud solicitud : solicitudes) {
+        for (Solicitud solicitud : listado) {
             imprimir(solicitud);
         }
     }
@@ -340,7 +339,7 @@ public class SistemaSolicitudes {
         }
         try {
             FileWriter escritor = new FileWriter(rutaArchivo);
-            for (Solicitud solicitud : lst) {
+            for (Solicitud solicitud : solicitudes) {
                 escritor.write(solicitud.getId() + ";" + solicitud.getEstudiante().getLegajo() + ";"
                         + solicitud.getEstudiante().getNombre() + ";"
                         + solicitud.getEstudiante().getEmail() + ";" + solicitud.getTipo() + ";"
@@ -365,14 +364,14 @@ public class SistemaSolicitudes {
                 String[] campos = linea.split(";");
                 int id = Integer.parseInt(campos[0]);
                 Estudiante estudiante = null;
-                for (Estudiante candidato : est) {
+                for (Estudiante candidato : estudiantes) {
                     if (candidato.getLegajo().equals(campos[1])) {
                         estudiante = candidato;
                     }
                 }
                 if (estudiante == null) {
                     estudiante = new Estudiante(campos[1], campos[2], campos[3]);
-                    est.add(estudiante);
+                    estudiantes.add(estudiante);
                 }
                 TipoSolicitud tipo = TipoSolicitud.desde(campos[4]);
                 if (tipo == null) {
@@ -386,7 +385,7 @@ public class SistemaSolicitudes {
                 }
                 int idResponsable = Integer.parseInt(campos[9]);
                 Responsable responsable = null;
-                for (Responsable candidato : resp) {
+                for (Responsable candidato : responsables) {
                     if (candidato.getId() == idResponsable) {
                         responsable = candidato;
                     }
@@ -394,7 +393,7 @@ public class SistemaSolicitudes {
                 LocalDate fechaCreacion = LocalDate.parse(campos[10]);
                 Solicitud solicitud = new Solicitud(id, estudiante, tipo, campos[5], prioridad, urgente, fechaCreacion);
                 solicitud.restaurar(estado, responsable);
-                lst.add(solicitud);
+                solicitudes.add(solicitud);
                 if (solicitud.getId() > ultimoId) {
                     ultimoId = solicitud.getId();
                 }

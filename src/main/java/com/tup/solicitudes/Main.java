@@ -62,7 +62,7 @@ public class Main {
                         System.out.print("Id de solicitud: ");
                         int id = Integer.parseInt(sc.nextLine().trim());
                         System.out.println("Responsables:");
-                        for (Responsable r : sis.resp) {
+                        for (Responsable r : sis.getResponsables()) {
                             System.out.println("  " + r.getId() + " - " + r.getNombre() + " (" + r.getArea() + ")");
                         }
                         System.out.print("Id de responsable: ");
@@ -71,7 +71,7 @@ public class Main {
                         break;
                     }
                     case "4":
-                        sis.imprimirLista(sis.lst);
+                        sis.imprimirLista(sis.getSolicitudes());
                         break;
                     case "5": {
                         System.out.print("Estado: ");
@@ -97,7 +97,7 @@ public class Main {
                     case "9": {
                         System.out.print("Formato (CSV/JSON): ");
                         String f = sc.nextLine().trim().toUpperCase();
-                        ReporteSimple rs = new ReporteSimple(sis.lst);
+                        ReporteSimple rs = new ReporteSimple(sis.getSolicitudes());
                         if (f.equals("CSV")) {
                             System.out.println(rs.exportarCSV());
                         } else if (f.equals("JSON")) {
@@ -108,7 +108,7 @@ public class Main {
                         break;
                     }
                     case "10": {
-                        Exportable ex = new ReporteSimple(sis.lst);
+                        Exportable ex = new ReporteSimple(sis.getSolicitudes());
                         try {
                             System.out.println(ex.exportarPDF());
                         } catch (UnsupportedOperationException uoe) {
