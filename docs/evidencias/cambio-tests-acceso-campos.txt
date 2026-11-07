@@ -1,0 +1,168 @@
+EVIDENCIA: el cambio de tests es SOLO de forma de acceso (campo -> getter)
+==========================================================================
+
+Commit base (getters agregados, campos publicos): 3203fbe
+Commit de tests (solo src/test):                 00544ff
+Comparacion: git diff 3203fbe 00544ff
+
+1) Archivos tocados (el commit no toca src/main)
+--------------------------------------------------
+ .../DefectosLatentesCaracterizacionTest.java       |  22 ++--
+ .../ExportacionCaracterizacionTest.java            |   2 +-
+ .../SistemaSolicitudesCaracterizacionTest.java     | 120 ++++++++++-----------
+ 3 files changed, 72 insertions(+), 72 deletions(-)
+Archivos de src/main modificados: 0
+
+2) Inversa exacta: aplicando getter -> campo a los tests nuevos se obtienen los tests viejos, byte a byte
+-------------------------------------------------------------------------------------------------------
+SistemaSolicitudesCaracterizacionTest: IDENTICO (diferencias: 0)
+ExportacionCaracterizacionTest: IDENTICO (diferencias: 0)
+DefectosLatentesCaracterizacionTest: IDENTICO (diferencias: 0)
+
+3) Aserciones y valores esperados no cambian
+---------------------------------------------
+SistemaSolicitudesCaracterizacionTest: lineas con assert 154 -> 154 | @Test 39 -> 39 | literales de texto (hash) 078df7c3cdd5 -> 078df7c3cdd5
+ExportacionCaracterizacionTest: lineas con assert 6 -> 6 | @Test 3 -> 3 | literales de texto (hash) 07279c53dc12 -> 07279c53dc12
+DefectosLatentesCaracterizacionTest: lineas con assert 26 -> 26 | @Test 7 -> 7 | literales de texto (hash) d01fc754f405 -> d01fc754f405
+
+4) Unicos cambios de tokens (cantidad de veces)
+------------------------------------------------
+     29 [-lst-]{+getSolicitudes()+}
+     11 [-responsable-]{+getResponsable()+}
+     10 [-estado-]{+getEstado()+}
+      8 [-prioridad-]{+getPrioridad()+}
+      8 [-nombre-]{+getNombre()+}
+      5 [-estudiante-]{+getEstudiante()+}
+      4 [-id-]{+getId()+}
+      4 [-est-]{+getEstudiantes()+}
+      3 [-urgente-]{+isUrgente()+}
+      3 [-fechaCreacion-]{+getFechaCreacion()+}
+      2 [-descripcion-]{+getDescripcion()+}
+      1 [-tipo-]{+getTipo()+}
+      1 [-resp-]{+getResponsables()+}
+      1 [-legajo-]{+getLegajo()+}
+      1 [-email-]{+getEmail()+}
+
+Lineas con algun cambio que NO sea uno de estos pares campo -> getter permitidos (debe ser 0):
+0
+
+5) Salida completa de: git diff -U0 --word-diff 3203fbe 00544ff -- src/test
+------------------------------------------------------------------
+diff --git a/src/test/java/com/tup/solicitudes/DefectosLatentesCaracterizacionTest.java b/src/test/java/com/tup/solicitudes/DefectosLatentesCaracterizacionTest.java
+index 3ce1e12..53bdc48 100644
+--- a/src/test/java/com/tup/solicitudes/DefectosLatentesCaracterizacionTest.java
++++ b/src/test/java/com/tup/solicitudes/DefectosLatentesCaracterizacionTest.java
+@@ -82 +82 @@ class DefectosLatentesCaracterizacionTest {
+        assertEquals(2, sis.[-lst-]{+getSolicitudes()+}.size());             // y la memoria tiene las 2
+@@ -116,2 +116,2 @@ class DefectosLatentesCaracterizacionTest {
+        assertEquals(3, sis.[-lst-]{+getSolicitudes()+}.size());
+        assertEquals(1, recargado.[-lst-]{+getSolicitudes()+}.size());       // solo sobrevive la anterior a la linea corrupta
+@@ -131,2 +131,2 @@ class DefectosLatentesCaracterizacionTest {
+        assertEquals(3, sis.[-lst-]{+getSolicitudes()+}.size());
+        assertEquals(1, recargado.[-lst-]{+getSolicitudes()+}.size());
+@@ -147,4 +147,4 @@ class DefectosLatentesCaracterizacionTest {
+        assertEquals(2, sis.[-lst-]{+getSolicitudes()+}.size());
+        assertEquals(1, sis.[-lst-]{+getSolicitudes()+}.get(0).[-id-]{+getId()+});
+        assertEquals(1, sis.[-lst-]{+getSolicitudes()+}.get(1).[-id-]{+getId()+});          // mismo id repetido
+        assertEquals(1, sis.[-est-]{+getEstudiantes()+}.size());             // el estudiante si se reutiliza
+@@ -171,2 +171,2 @@ class DefectosLatentesCaracterizacionTest {
+        assertEquals("Laura Gomez", ordenCorrecto.[-lst-]{+getSolicitudes()+}.get(0).[-responsable-]{+getResponsable()+}.[-nombre-]{+getNombre()+});
+        assertNull(ordenInvertido.[-lst-]{+getSolicitudes()+}.get(0).[-responsable-]{+getResponsable()+});   // sin error ni aviso
+diff --git a/src/test/java/com/tup/solicitudes/ExportacionCaracterizacionTest.java b/src/test/java/com/tup/solicitudes/ExportacionCaracterizacionTest.java
+index b1077c6..1e38aac 100644
+--- a/src/test/java/com/tup/solicitudes/ExportacionCaracterizacionTest.java
++++ b/src/test/java/com/tup/solicitudes/ExportacionCaracterizacionTest.java
+@@ -26 +26 @@ class ExportacionCaracterizacionTest {
+        return new ArrayList<>(sis.[-lst-]{+getSolicitudes()+});
+diff --git a/src/test/java/com/tup/solicitudes/SistemaSolicitudesCaracterizacionTest.java b/src/test/java/com/tup/solicitudes/SistemaSolicitudesCaracterizacionTest.java
+index af2a832..040480a 100644
+--- a/src/test/java/com/tup/solicitudes/SistemaSolicitudesCaracterizacionTest.java
++++ b/src/test/java/com/tup/solicitudes/SistemaSolicitudesCaracterizacionTest.java
+@@ -77,2 +77,2 @@ class SistemaSolicitudesCaracterizacionTest {
+        for (Solicitud s : sis.[-lst-]{+getSolicitudes()+}) {
+            if (s.[-id-]{+getId()+} == id) {
+@@ -86 +86 @@ class SistemaSolicitudesCaracterizacionTest {
+        return l.stream().map(s -> s.[-id-]{+getId()+}).toList();
+@@ -97,12 +97,12 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(1, sis.[-lst-]{+getSolicitudes()+}.size());
+        Solicitud s = sis.[-lst-]{+getSolicitudes()+}.get(0);
+        assertEquals("PENDIENTE", s.[-estado-]{+getEstado()+});
+        assertEquals("CERTIFICADO", s.[-tipo-]{+getTipo()+});
+        assertEquals("Constancia", s.[-descripcion-]{+getDescripcion()+});
+        assertEquals(2, s.[-prioridad-]{+getPrioridad()+});
+        assertFalse(s.[-urgente-]{+isUrgente()+});
+        assertEquals(LocalDate.of(2026, 3, 1), s.[-fechaCreacion-]{+getFechaCreacion()+});
+        assertNull(s.[-responsable-]{+getResponsable()+});
+        assertEquals("L001", s.[-estudiante-]{+getEstudiante()+}.[-legajo-]{+getLegajo()+});
+        assertEquals("Ana Perez", s.[-estudiante-]{+getEstudiante()+}.[-nombre-]{+getNombre()+});
+        assertEquals("ana@ejemplo.edu", s.[-estudiante-]{+getEstudiante()+}.[-email-]{+getEmail()+});
+@@ -119,2 +119,2 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(2, sis.[-est-]{+getEstudiantes()+}.size());
+        assertTrue(sis.[-lst-]{+getSolicitudes()+}.get(0).[-estudiante-]{+getEstudiante()+} == sis.[-lst-]{+getSolicitudes()+}.get(1).[-estudiante-]{+getEstudiante()+});
+@@ -129 +129 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(LocalDate.now(), sis.[-lst-]{+getSolicitudes()+}.get(0).[-fechaCreacion-]{+getFechaCreacion()+});
+@@ -140,3 +140,3 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(1, buscar(1).[-prioridad-]{+getPrioridad()+});
+        assertEquals(2, buscar(2).[-prioridad-]{+getPrioridad()+});
+        assertEquals(3, buscar(3).[-prioridad-]{+getPrioridad()+});
+@@ -151,4 +151,4 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(2, buscar(1).[-prioridad-]{+getPrioridad()+});
+        assertEquals(3, buscar(2).[-prioridad-]{+getPrioridad()+});
+        assertEquals(3, buscar(3).[-prioridad-]{+getPrioridad()+});
+        assertTrue(buscar(3).[-urgente-]{+isUrgente()+});
+@@ -164,2 +164,2 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertTrue(sis.[-lst-]{+getSolicitudes()+}.isEmpty());
+        assertTrue(sis.[-est-]{+getEstudiantes()+}.isEmpty());
+@@ -177 +177 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertTrue(sis.[-lst-]{+getSolicitudes()+}.isEmpty());
+@@ -191 +191 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertTrue(sis.[-lst-]{+getSolicitudes()+}.isEmpty());
+@@ -199 +199 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertTrue(sis.[-lst-]{+getSolicitudes()+}.isEmpty());
+@@ -229 +229 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(3, sis.[-lst-]{+getSolicitudes()+}.size());
+@@ -257 +257 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("EN_PROCESO", buscar(1).[-estado-]{+getEstado()+});
+@@ -259 +259 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("RESUELTA", buscar(1).[-estado-]{+getEstado()+});
+@@ -262 +262 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("RECHAZADA", buscar(2).[-estado-]{+getEstado()+});
+@@ -266 +266 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("RECHAZADA", buscar(3).[-estado-]{+getEstado()+});
+@@ -276 +276 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("PENDIENTE", buscar(1).[-estado-]{+getEstado()+});
+@@ -282 +282 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("EN_PROCESO", buscar(1).[-estado-]{+getEstado()+});
+@@ -297,2 +297,2 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("RESUELTA", buscar(1).[-estado-]{+getEstado()+});
+        assertEquals("RECHAZADA", buscar(2).[-estado-]{+getEstado()+});
+@@ -321,4 +321,4 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("Laura Gomez", buscar(1).[-responsable-]{+getResponsable()+}.[-nombre-]{+getNombre()+});
+        assertEquals("Carlos Ruiz", buscar(2).[-responsable-]{+getResponsable()+}.[-nombre-]{+getNombre()+});
+        assertEquals("Marta Diaz", buscar(3).[-responsable-]{+getResponsable()+}.[-nombre-]{+getNombre()+});
+        assertEquals("Laura Gomez", buscar(4).[-responsable-]{+getResponsable()+}.[-nombre-]{+getNombre()+});
+@@ -334 +334 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertNull(buscar(1).[-responsable-]{+getResponsable()+});
+@@ -358 +358 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals("Pablo Soto", buscar(1).[-responsable-]{+getResponsable()+}.[-nombre-]{+getNombre()+});
+@@ -366 +366 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(4, sis.[-resp-]{+getResponsables()+}.size());
+@@ -523 +523 @@ class SistemaSolicitudesCaracterizacionTest {
+        sis.imprimirLista(sis.[-lst-]{+getSolicitudes()+});
+@@ -567,10 +567,10 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(2, otro.[-lst-]{+getSolicitudes()+}.size());
+        assertEquals(1, otro.[-est-]{+getEstudiantes()+}.size());
+        Solicitud s1 = otro.[-lst-]{+getSolicitudes()+}.get(0);
+        assertEquals("EN_PROCESO", s1.[-estado-]{+getEstado()+});
+        assertEquals("Constancia, para beca", s1.[-descripcion-]{+getDescripcion()+});
+        assertEquals(2, s1.[-prioridad-]{+getPrioridad()+});
+        assertTrue(s1.[-urgente-]{+isUrgente()+});
+        assertEquals("Laura Gomez", s1.[-responsable-]{+getResponsable()+}.[-nombre-]{+getNombre()+});
+        assertEquals(LocalDate.of(2026, 3, 1), s1.[-fechaCreacion-]{+getFechaCreacion()+});
+        assertNull(otro.[-lst-]{+getSolicitudes()+}.get(1).[-responsable-]{+getResponsable()+});
+@@ -588 +588 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertTrue(otro.[-lst-]{+getSolicitudes()+}.isEmpty());
+@@ -598 +598 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(1, enMemoria.[-lst-]{+getSolicitudes()+}.size());
+@@ -609 +609 @@ class SistemaSolicitudesCaracterizacionTest {
+        assertEquals(1, malo.[-lst-]{+getSolicitudes()+}.size());

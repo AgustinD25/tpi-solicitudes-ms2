@@ -268,15 +268,60 @@ public int registrarSolicitud(NuevaSolicitud datos) {
 
 ---
 
+## E1. Excepción autorizada: los tests acceden por getters (no es un refactoring)
+
+- **Para qué:** habilitar los smells 4, 5 y 13 (enums y encapsulamiento). Los tests leían los campos públicos
+  (`assertEquals("PENDIENTE", s.estado)`, `sis.lst`, `sis.est`, `sis.resp`); pasar `estado` y `tipo` a `enum` o volver
+  privados los campos los rompía, y `CLAUDE.md` prohíbe modificar los tests. Agus autorizó cambiar **solo la forma
+  de acceso**, con condiciones. La regla quedó anotada en `CLAUDE.md`.
+- **Cómo se hizo, en dos commits para que el cambio de tests sea aislable:**
+  1. `3203fbe` (solo `src/main`): getters en `Solicitud`, `Estudiante` y `Responsable`, y en `SistemaSolicitudes`
+     `getSolicitudes()`, `getEstudiantes()` y `getResponsables()`. Los campos siguen públicos. 49 tests en verde.
+  2. `00544ff` (solo `src/test`): campo → getter en los tres archivos de test. Sigue con los campos públicos.
+     49 tests en verde.
+
+Antes (test):
+```java
+assertEquals("PENDIENTE", s.estado);
+assertEquals("Laura Gomez", buscar(1).responsable.nombre);
+assertEquals(3, sis.lst.size());
+```
+
+Después (test):
+```java
+assertEquals("PENDIENTE", s.getEstado());
+assertEquals("Laura Gomez", buscar(1).getResponsable().getNombre());
+assertEquals(3, sis.getSolicitudes().size());
+```
+
+Getters nuevos (producción):
+```java
+public String getEstado() { return estado; }            // sigue siendo String; el enum será interno
+public List<Solicitud> getSolicitudes() { return List.copyOf(lst); }   // copia no modificable
+```
+
+- **Evidencia de que solo cambió la forma de acceso** (`docs/evidencias/cambio-tests-acceso-campos.txt`, generada con
+  `git diff --word-diff` entre `3203fbe` y `00544ff`):
+  - `src/main`: 0 archivos modificados en el commit de tests.
+  - Transformación inversa getter → campo sobre los tests nuevos: **idéntica byte a byte** a los tests viejos en
+    los 3 archivos.
+  - Líneas con `assert`, cantidad de `@Test` y literales de texto: iguales antes y después (154/154, 6/6, 26/26;
+    39, 3 y 7 tests).
+  - 91 cambios de token, todos de la forma `[-campo-]{+getter+}` según una tabla fija de 16 pares; 0 líneas con
+    cambios fuera de esa tabla. (El control se comprobó con casos falsos: un par inventado, un par cruzado y un cambio
+    de valor se detectan.)
+- **Por qué los getters de `estado` y `tipo` devuelven `String`:** así los valores esperados de los tests
+  (`"PENDIENTE"`, `"CERTIFICADO"`) no cambian cuando por dentro pasen a ser enums.
+- **Por qué las listas son copias no modificables:** `List.copyOf` impide que quien llama agregue o saque
+  elementos y rompa el estado interno (era parte del smell 13).
+- **Límite de la excepción:** no autoriza ningún otro cambio en los tests.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
 |---|---|---|
-| 8, 10 (parcial), 6, 2, 3 | Cerrados (R1 a R5) | `lst`, `est` y `resp` conservan su nombre por los tests |
-| 4, 5, 13 (enums y encapsulamiento) | **Bloqueados por los tests actuales** | Ver abajo |
+| 8, 10 (parcial), 6, 2, 3 | Cerrados (R1 a R5) | `lst`, `est` y `resp` siguen públicos hasta encapsular |
+| 4, 5, 13 (enums y encapsulamiento) | **Desbloqueados** por E1 | Siguiente paso: usar los getters en `Main`, pasar a enums y privatizar campos |
 | 7 (duplicación), 9 (errores), 11 (DIP), 14 (acoplamiento temporal), 1 (God Class), 12 (ISP/LSP) | Pendientes | |
-
-**Bloqueo de los smells 4, 5 y 13.** Los tests de caracterización leen y comparan los campos públicos tal como
-están: `assertEquals("PENDIENTE", s.estado)` (campo `String`), `s.tipo`, `s.estudiante.legajo`, `s.responsable.nombre`,
-`sis.lst`, `sis.est`, `sis.resp`. Pasar `estado` y `tipo` a `enum`, o volver privados los campos, rompería esos tests, y
-`CLAUDE.md` prohíbe modificarlos. Hace falta una decisión explícita antes de continuar con esos tres smells.
