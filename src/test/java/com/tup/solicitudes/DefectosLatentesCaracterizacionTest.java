@@ -118,10 +118,14 @@ class DefectosLatentesCaracterizacionTest {
         assertFalse(sis.cambiarEstado(99, null));
     }
 
-    // ---------- D6: ';' en nombre o email corrompe el CSV (alcanzable desde el menu) ----------
+    // ---------- D6 y D8: separadores y caracteres especiales en el CSV (alcanzable desde el menu) ----------
 
+    // CAMBIO DELIBERADO (correccion de los defectos D6 y D8): antes estos tests se llamaban
+    // d6_emailConPuntoYComaCorrompeElCsv... y d6_nombreConPuntoYComaCorrompeElCsv... y exigian que, con un ';'
+    // en el email o en el nombre, al recargar se perdieran esa linea y todas las siguientes (1 de 3 solicitudes).
+    // Ahora los textos se escapan al guardar y se recuperan tal cual: vuelven las 3 solicitudes, con los mismos datos.
     @Test
-    void d6_emailConPuntoYComaCorrompeElCsvYSePierdenEsaLineaYLasSiguientes() {
+    void d6_emailConPuntoYComaSeGuardaYRecargaIntacto() {
         Path archivo = csv("d6-email.csv");
         SistemaSolicitudes sis = new SistemaSolicitudes(archivo.toString());
         assertEquals(1, sis.registrarSolicitud("L1", "Ana", "a@b.com", "CERTIFICADO", "ok", 1, false, FECHA));
@@ -131,12 +135,13 @@ class DefectosLatentesCaracterizacionTest {
         SistemaSolicitudes recargado = new SistemaSolicitudes(archivo.toString());
         recargado.cargar();
 
-        assertEquals(3, sis.getSolicitudes().size());
-        assertEquals(1, recargado.getSolicitudes().size());       // solo sobrevive la anterior a la linea corrupta
+        assertEquals(3, recargado.getSolicitudes().size());
+        assertEquals("be;to@b.com", recargado.getSolicitudes().get(1).getEstudiante().getEmail());
+        assertEquals("c@b.com", recargado.getSolicitudes().get(2).getEstudiante().getEmail());
     }
 
     @Test
-    void d6_nombreConPuntoYComaCorrompeElCsvYSePierdenEsaLineaYLasSiguientes() {
+    void d6_nombreConPuntoYComaSeGuardaYRecargaIntacto() {
         Path archivo = csv("d6-nombre.csv");
         SistemaSolicitudes sis = new SistemaSolicitudes(archivo.toString());
         assertEquals(1, sis.registrarSolicitud("L1", "Ana", "a@b.com", "CERTIFICADO", "ok", 1, false, FECHA));
@@ -146,8 +151,23 @@ class DefectosLatentesCaracterizacionTest {
         SistemaSolicitudes recargado = new SistemaSolicitudes(archivo.toString());
         recargado.cargar();
 
-        assertEquals(3, sis.getSolicitudes().size());
+        assertEquals(3, recargado.getSolicitudes().size());
+        assertEquals("Be;to", recargado.getSolicitudes().get(1).getEstudiante().getNombre());
+        assertEquals("Carla", recargado.getSolicitudes().get(2).getEstudiante().getNombre());
+    }
+
+    @Test
+    void d8_laDescripcionConCaracteresEspecialesVuelveExactamenteIgual() {
+        Path archivo = csv("d8.csv");
+        String descripcion = "Pedido; con punto y coma, una \\ barra\ny un salto de linea";
+        SistemaSolicitudes sis = new SistemaSolicitudes(archivo.toString());
+        assertEquals(1, sis.registrarSolicitud("L1", "Ana", "a@b.com", "CERTIFICADO", descripcion, 1, false, FECHA));
+
+        SistemaSolicitudes recargado = new SistemaSolicitudes(archivo.toString());
+        recargado.cargar();
+
         assertEquals(1, recargado.getSolicitudes().size());
+        assertEquals(descripcion, recargado.getSolicitudes().get(0).getDescripcion());
     }
 
     // ---------- D7: cargar() es idempotente ----------

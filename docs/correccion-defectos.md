@@ -101,3 +101,32 @@ Cada entrada dice: qué pasaba, qué pasa ahora, qué test cambió y por qué es
   que el mensaje de error aparece.
 - **Por qué mejora:** un error de persistencia deja de ser invisible. Se decidió avisar y no abortar el registro, para no
   perder la solicitud que ya está en memoria.
+
+---
+
+## D6 y D8. Un `;` en el nombre o el email corrompía el archivo, y en la descripción se cambiaba por `,`
+
+Se corrigen en un solo commit porque comparten la causa: el formato del CSV no escapaba los separadores.
+
+- **Antes (D6):** un `;` en el nombre o en el email (el validador de email lo acepta) partía la línea en más
+  campos de los esperados; al recargar, esa línea y **todas las siguientes** se perdían. De 3 solicitudes guardadas,
+  volvía 1.
+- **Antes (D8):** en la descripción el `;` se reemplazaba por `,`, de modo que el texto no volvía igual
+  (`Constancia; para beca` volvía como `Constancia, para beca`).
+- **Ahora:** los textos libres (legajo, nombre, email y descripción) se escapan al guardar y se recuperan tal cual al
+  leer: `\` → `\`, `;` → `\;`, salto de línea → `\n`, retorno de carro → `\r`. La clase `FormatoCsv` concentra
+  las reglas. Al cargar se exige que cada línea tenga 11 campos; si no, se informa el error (D3) en vez de
+  interpretar mal la línea.
+- **Compatibilidad:** los archivos guardados por la versión anterior se siguen leyendo (no tienen barras).
+- **Código:** `FormatoCsv` (nueva), `RepositorioCsv.aLinea` y `cargar`.
+- **Tests cambiados:**
+  - `d6_emailConPuntoYComaCorrompeElCsv...` → `d6_emailConPuntoYComaSeGuardaYRecargaIntacto` y
+    `d6_nombreConPuntoYComaCorrompeElCsv...` → `d6_nombreConPuntoYComaSeGuardaYRecargaIntacto`: antes exigían 1
+    solicitud recargada de 3; ahora exigen las 3 con sus datos.
+  - `cadaOperacionGuardaElCsvCompleto`: la línea esperada del archivo pasa de `Constancia, para beca` a
+    `Constancia\; para beca`.
+  - `cargarReconstruyeElEstadoYContinuaLosIds`: la descripción recargada pasa de `Constancia, para beca` a
+    `Constancia; para beca`.
+  - Test nuevo `d8_laDescripcionConCaracteresEspecialesVuelveExactamenteIgual`: prueba `;`, `,`, barra invertida y
+    salto de línea en una misma descripción.
+- **Por qué mejora:** ya no se pierden datos ni se alteran por el contenido que escribe el usuario.

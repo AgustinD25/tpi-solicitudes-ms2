@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -20,6 +21,7 @@ import java.util.function.Function;
  */
 public class RepositorioCsv extends RepositorioEnMemoria {
     static final int ID_SIN_RESPONSABLE = -1;
+    private static final int CANTIDAD_DE_CAMPOS = 11;
 
     private final String rutaArchivo;
     private final Function<Integer, Responsable> buscarResponsable;
@@ -61,10 +63,11 @@ public class RepositorioCsv extends RepositorioEnMemoria {
 
     private String aLinea(Solicitud solicitud) {
         String descripcion = solicitud.getDescripcion() == null ? "" : solicitud.getDescripcion();
-        return solicitud.getId() + ";" + solicitud.getEstudiante().getLegajo() + ";"
-                + solicitud.getEstudiante().getNombre() + ";"
-                + solicitud.getEstudiante().getEmail() + ";" + solicitud.getTipo() + ";"
-                + descripcion.replace(';', ',') + ";"
+        Estudiante estudiante = solicitud.getEstudiante();
+        return solicitud.getId() + ";" + FormatoCsv.escapar(estudiante.getLegajo()) + ";"
+                + FormatoCsv.escapar(estudiante.getNombre()) + ";"
+                + FormatoCsv.escapar(estudiante.getEmail()) + ";" + solicitud.getTipo() + ";"
+                + FormatoCsv.escapar(descripcion) + ";"
                 + solicitud.getPrioridad() + ";" + solicitud.isUrgente() + ";" + solicitud.getEstado() + ";"
                 + (solicitud.getResponsable() == null ? ID_SIN_RESPONSABLE : solicitud.getResponsable().getId())
                 + ";" + solicitud.getFechaCreacion() + "\n";
@@ -83,26 +86,30 @@ public class RepositorioCsv extends RepositorioEnMemoria {
         try (BufferedReader lector = new BufferedReader(new FileReader(rutaArchivo))) {
             String linea;
             while ((linea = lector.readLine()) != null) {
-                String[] campos = linea.split(";");
-                int id = Integer.parseInt(campos[0]);
-                Estudiante estudiante = buscarPorLegajo(campos[1]).orElse(null);
+                List<String> campos = FormatoCsv.dividir(linea);
+                if (campos.size() != CANTIDAD_DE_CAMPOS) {
+                    throw new IllegalArgumentException("se esperaban " + CANTIDAD_DE_CAMPOS
+                            + " campos y la linea tiene " + campos.size());
+                }
+                int id = Integer.parseInt(campos.get(0));
+                Estudiante estudiante = buscarPorLegajo(campos.get(1)).orElse(null);
                 if (estudiante == null) {
-                    estudiante = new Estudiante(campos[1], campos[2], campos[3]);
+                    estudiante = new Estudiante(campos.get(1), campos.get(2), campos.get(3));
                     agregar(estudiante);
                 }
-                TipoSolicitud tipo = TipoSolicitud.desde(campos[4]);
+                TipoSolicitud tipo = TipoSolicitud.desde(campos.get(4));
                 if (tipo == null) {
-                    throw new IllegalArgumentException("tipo desconocido en el archivo: " + campos[4]);
+                    throw new IllegalArgumentException("tipo desconocido en el archivo: " + campos.get(4));
                 }
-                int prioridad = Integer.parseInt(campos[6]);
-                boolean urgente = Boolean.parseBoolean(campos[7]);
-                EstadoSolicitud estado = EstadoSolicitud.desde(campos[8]);
+                int prioridad = Integer.parseInt(campos.get(6));
+                boolean urgente = Boolean.parseBoolean(campos.get(7));
+                EstadoSolicitud estado = EstadoSolicitud.desde(campos.get(8));
                 if (estado == null) {
-                    throw new IllegalArgumentException("estado desconocido en el archivo: " + campos[8]);
+                    throw new IllegalArgumentException("estado desconocido en el archivo: " + campos.get(8));
                 }
-                Responsable responsable = buscarResponsable.apply(Integer.parseInt(campos[9]));
-                LocalDate fechaCreacion = LocalDate.parse(campos[10]);
-                Solicitud solicitud = new Solicitud(id, estudiante, tipo, campos[5], prioridad, urgente, fechaCreacion);
+                Responsable responsable = buscarResponsable.apply(Integer.parseInt(campos.get(9)));
+                LocalDate fechaCreacion = LocalDate.parse(campos.get(10));
+                Solicitud solicitud = new Solicitud(id, estudiante, tipo, campos.get(5), prioridad, urgente, fechaCreacion);
                 solicitud.restaurar(estado, responsable);
                 incorporar(solicitud);
             }

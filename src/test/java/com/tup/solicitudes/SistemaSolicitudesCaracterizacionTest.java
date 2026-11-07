@@ -563,7 +563,9 @@ class SistemaSolicitudesCaracterizacionTest {
         sis.cambiarEstado(1, "EN_PROCESO");
         sis.asignarResponsable(1, 1);
 
-        String esperado = "1;L001;Ana Perez;ana@ejemplo.edu;CERTIFICADO;Constancia, para beca;2;true;EN_PROCESO;1;2026-03-01\n"
+        // CAMBIO DELIBERADO (correccion del defecto D8): antes el ';' de la descripcion se cambiaba por ','
+        // ("Constancia, para beca"). Ahora se escapa ("Constancia\; para beca") y se recupera tal cual al cargar.
+        String esperado = "1;L001;Ana Perez;ana@ejemplo.edu;CERTIFICADO;Constancia\\; para beca;2;true;EN_PROCESO;1;2026-03-01\n"
                 + "2;L002;Beto Diaz;beto@ejemplo.edu;EQUIVALENCIA;Equiv;3;false;PENDIENTE;-1;2026-03-02\n";
         assertEquals(esperado, Files.readString(csv).replace("\r\n", "\n"));
     }
@@ -585,7 +587,7 @@ class SistemaSolicitudesCaracterizacionTest {
         assertEquals(1, otro.getEstudiantes().size());
         Solicitud s1 = otro.getSolicitudes().get(0);
         assertEquals("EN_PROCESO", s1.getEstado());
-        assertEquals("Constancia, para beca", s1.getDescripcion());
+        assertEquals("Constancia; para beca", s1.getDescripcion());   // D8: antes volvia con ',' en vez de ';'
         assertEquals(2, s1.getPrioridad());
         assertTrue(s1.isUrgente());
         assertEquals("Laura Gomez", s1.getResponsable().getNombre());
