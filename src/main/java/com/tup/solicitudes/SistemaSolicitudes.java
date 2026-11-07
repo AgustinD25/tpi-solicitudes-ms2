@@ -8,6 +8,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SistemaSolicitudes {
+    // Codigos de retorno de registrarSolicitud (contrato publico que se mantiene)
+    public static final int COD_DATOS_INVALIDOS = -1;
+    public static final int COD_LIMITE_PENDIENTES = -2;
+    public static final int COD_TIPO_INVALIDO = -3;
+    public static final int COD_PRIORIDAD_INVALIDA = -4;
+
+    // Reglas de negocio
+    static final int MAX_PENDIENTES_POR_ESTUDIANTE = 3;
+    static final int PRIORIDAD_MINIMA = 1;
+    static final int PRIORIDAD_MAXIMA = 3;
+    static final int PLAZO_CERTIFICADO = 5;
+    static final int PLAZO_EQUIVALENCIA = 30;
+    static final int PLAZO_RECLAMO_NOTA = 10;
+    static final int PLAZO_BAJA_MATERIA = 7;
+
+    // Formato del CSV: valor de la columna "responsable" cuando no hay uno asignado
+    static final int ID_SIN_RESPONSABLE = -1;
+
     public List<Solicitud> lst = new ArrayList<>();
     public List<Estudiante> est = new ArrayList<>();
     public List<Responsable> resp = new ArrayList<>();
@@ -46,25 +64,25 @@ public class SistemaSolicitudes {
                                   String descripcion, int prioridad, boolean urgente, LocalDate fecha) {
         if (legajo == null || legajo.trim().length() == 0) {
             System.out.println("Error: legajo vacio");
-            return -1;
+            return COD_DATOS_INVALIDOS;
         }
         if (nombre == null || nombre.trim().length() == 0) {
             System.out.println("Error: nombre vacio");
-            return -1;
+            return COD_DATOS_INVALIDOS;
         }
         if (!tipo.equals("CERTIFICADO") && !tipo.equals("EQUIVALENCIA")
                 && !tipo.equals("RECLAMO_NOTA") && !tipo.equals("BAJA_MATERIA")) {
             System.out.println("Error: tipo de solicitud invalido");
-            return -3;
+            return COD_TIPO_INVALIDO;
         }
-        if (prioridad < 1 || prioridad > 3) {
+        if (prioridad < PRIORIDAD_MINIMA || prioridad > PRIORIDAD_MAXIMA) {
             System.out.println("Error: prioridad fuera de rango");
-            return -4;
+            return COD_PRIORIDAD_INVALIDA;
         }
         Estudiante aux = new Estudiante(legajo, nombre, email);
         if (!aux.emailValido()) {
             System.out.println("Error: email invalido");
-            return -1;
+            return COD_DATOS_INVALIDOS;
         }
         int pendientes = 0;
         for (Solicitud s : lst) {
@@ -72,9 +90,10 @@ public class SistemaSolicitudes {
                 pendientes++;
             }
         }
-        if (pendientes >= 3) {
-            System.out.println("Error: el estudiante ya tiene 3 solicitudes pendientes");
-            return -2;
+        if (pendientes >= MAX_PENDIENTES_POR_ESTUDIANTE) {
+            System.out.println("Error: el estudiante ya tiene " + MAX_PENDIENTES_POR_ESTUDIANTE
+                    + " solicitudes pendientes");
+            return COD_LIMITE_PENDIENTES;
         }
         Estudiante e = null;
         for (Estudiante x : est) {
@@ -88,8 +107,8 @@ public class SistemaSolicitudes {
         }
         if (urgente) {
             prioridad = prioridad + 1;
-            if (prioridad > 3) {
-                prioridad = 3;
+            if (prioridad > PRIORIDAD_MAXIMA) {
+                prioridad = PRIORIDAD_MAXIMA;
             }
         }
         Solicitud s2 = new Solicitud();
@@ -224,13 +243,13 @@ public class SistemaSolicitudes {
     public boolean estaVencida(Solicitud s, LocalDate hoy) {
         int plazo = 0;
         if (s.tipo.equals("CERTIFICADO")) {
-            plazo = 5;
+            plazo = PLAZO_CERTIFICADO;
         } else if (s.tipo.equals("EQUIVALENCIA")) {
-            plazo = 30;
+            plazo = PLAZO_EQUIVALENCIA;
         } else if (s.tipo.equals("RECLAMO_NOTA")) {
-            plazo = 10;
+            plazo = PLAZO_RECLAMO_NOTA;
         } else if (s.tipo.equals("BAJA_MATERIA")) {
-            plazo = 7;
+            plazo = PLAZO_BAJA_MATERIA;
         }
         if (s.estado.equals("RESUELTA") || s.estado.equals("RECHAZADA")) {
             return false;
@@ -323,7 +342,7 @@ public class SistemaSolicitudes {
                 fw.write(s.id + ";" + s.estudiante.legajo + ";" + s.estudiante.nombre + ";"
                         + s.estudiante.email + ";" + s.tipo + ";" + s.descripcion.replace(';', ',') + ";"
                         + s.prioridad + ";" + s.urgente + ";" + s.estado + ";"
-                        + (s.responsable == null ? -1 : s.responsable.id) + ";" + s.fechaCreacion + "\n");
+                        + (s.responsable == null ? ID_SIN_RESPONSABLE : s.responsable.id) + ";" + s.fechaCreacion + "\n");
             }
             fw.close();
         } catch (Exception ex) {
