@@ -9,7 +9,7 @@ public class Solicitud {
     public String descripcion;
     public int prioridad;
     public boolean urgente;
-    public String estado;
+    public EstadoSolicitud estado;
     public Responsable responsable;
     public LocalDate fechaCreacion;
 
@@ -42,6 +42,10 @@ public class Solicitud {
     }
 
     public String getEstado() {
+        return estado.name();
+    }
+
+    public EstadoSolicitud getEstadoSolicitud() {
         return estado;
     }
 
@@ -54,7 +58,7 @@ public class Solicitud {
     }
 
     public boolean estaVencida(LocalDate hoy) {
-        if (estado.equals("RESUELTA") || estado.equals("RECHAZADA")) {
+        if (estado.esFinal()) {
             return false;
         }
         return hoy.isAfter(fechaCreacion.plusDays(tipo.getPlazoDias()));

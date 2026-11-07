@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class SistemaSolicitudes {
     // Codigos de retorno de registrarSolicitud (contrato publico que se mantiene)
@@ -128,7 +129,7 @@ public class SistemaSolicitudes {
     private int contarPendientes(String legajo) {
         int pendientes = 0;
         for (Solicitud solicitud : lst) {
-            if (solicitud.estudiante.legajo.equals(legajo) && solicitud.estado.equals("PENDIENTE")) {
+            if (solicitud.estudiante.legajo.equals(legajo) && solicitud.estado == EstadoSolicitud.PENDIENTE) {
                 pendientes++;
             }
         }
@@ -167,7 +168,7 @@ public class SistemaSolicitudes {
         nueva.descripcion = datos.descripcion();
         nueva.prioridad = prioridadFinal;
         nueva.urgente = datos.urgente();
-        nueva.estado = "PENDIENTE";
+        nueva.estado = EstadoSolicitud.PENDIENTE;
         nueva.fechaCreacion = datos.fecha();
         return nueva;
     }
@@ -180,25 +181,17 @@ public class SistemaSolicitudes {
             System.out.println("Error: no existe la solicitud " + id);
             return false;
         }
-        boolean transicionValida = false;
-        if (solicitud.estado.equals("PENDIENTE")) {
-            if (nuevoEstado.equals("EN_PROCESO")) {
-                transicionValida = true;
-            } else if (nuevoEstado.equals("RECHAZADA")) {
-                transicionValida = true;
-            }
-        } else if (solicitud.estado.equals("EN_PROCESO")) {
-            if (nuevoEstado.equals("RESUELTA")) {
-                transicionValida = true;
-            } else if (nuevoEstado.equals("RECHAZADA")) {
-                transicionValida = true;
-            }
+        if (!solicitud.estado.esFinal()) {
+            // Defecto D5 conservado a proposito: con estado nulo la version original lanzaba
+            // NullPointerException (salvo si la solicitud ya estaba en un estado final).
+            Objects.requireNonNull(nuevoEstado);
         }
-        if (!transicionValida) {
+        EstadoSolicitud destino = EstadoSolicitud.desde(nuevoEstado);
+        if (destino == null || !solicitud.estado.puedePasarA(destino)) {
             System.out.println("Error: transicion invalida de " + solicitud.estado + " a " + nuevoEstado);
             return false;
         }
-        solicitud.estado = nuevoEstado;
+        solicitud.estado = destino;
         guardar();
         System.out.println("Solicitud #" + id + " ahora esta " + nuevoEstado);
         return true;
@@ -248,7 +241,7 @@ public class SistemaSolicitudes {
     public List<Solicitud> filtrarPorEstado(String estado) {
         List<Solicitud> resultado = new ArrayList<>();
         for (Solicitud solicitud : lst) {
-            if (solicitud.estado.equals(estado)) {
+            if (solicitud.getEstado().equals(estado)) {
                 resultado.add(solicitud);
             }
         }
@@ -285,30 +278,24 @@ public class SistemaSolicitudes {
     // ---------- reporte ----------
 
     public String reporte(LocalDate hoy) {
-        int pendientes = 0, enProceso = 0, resueltas = 0, rechazadas = 0;
+        Map<EstadoSolicitud, Integer> porEstado = new EnumMap<>(EstadoSolicitud.class);
+        for (EstadoSolicitud estado : EstadoSolicitud.values()) {
+            porEstado.put(estado, 0);
+        }
         Map<TipoSolicitud, Integer> porTipo = new EnumMap<>(TipoSolicitud.class);
         for (TipoSolicitud tipo : TipoSolicitud.values()) {
             porTipo.put(tipo, 0);
         }
         for (Solicitud solicitud : lst) {
-            if (solicitud.estado.equals("PENDIENTE")) {
-                pendientes++;
-            } else if (solicitud.estado.equals("EN_PROCESO")) {
-                enProceso++;
-            } else if (solicitud.estado.equals("RESUELTA")) {
-                resueltas++;
-            } else if (solicitud.estado.equals("RECHAZADA")) {
-                rechazadas++;
-            }
+            porEstado.merge(solicitud.estado, 1, Integer::sum);
             porTipo.merge(solicitud.tipo, 1, Integer::sum);
         }
         StringBuilder sb = new StringBuilder();
         sb.append("=== REPORTE ===\n");
         sb.append("Por estado:\n");
-        sb.append("  PENDIENTE: ").append(pendientes).append("\n");
-        sb.append("  EN_PROCESO: ").append(enProceso).append("\n");
-        sb.append("  RESUELTA: ").append(resueltas).append("\n");
-        sb.append("  RECHAZADA: ").append(rechazadas).append("\n");
+        for (EstadoSolicitud estado : EstadoSolicitud.values()) {
+            sb.append("  ").append(estado).append(": ").append(porEstado.get(estado)).append("\n");
+        }
         sb.append("Por tipo:\n");
         for (TipoSolicitud tipo : TipoSolicitud.values()) {
             sb.append("  ").append(tipo).append(": ").append(porTipo.get(tipo)).append("\n");
@@ -399,7 +386,10 @@ public class SistemaSolicitudes {
                 solicitud.descripcion = campos[5];
                 solicitud.prioridad = Integer.parseInt(campos[6]);
                 solicitud.urgente = Boolean.parseBoolean(campos[7]);
-                solicitud.estado = campos[8];
+                solicitud.estado = EstadoSolicitud.desde(campos[8]);
+                if (solicitud.estado == null) {
+                    throw new IllegalArgumentException("estado desconocido en el archivo: " + campos[8]);
+                }
                 int idResponsable = Integer.parseInt(campos[9]);
                 for (Responsable candidato : resp) {
                     if (candidato.id == idResponsable) {

@@ -371,6 +371,62 @@ Map<TipoSolicitud, Integer> porTipo = new EnumMap<>(TipoSolicitud.class);   // r
 
 ---
 
+## R7. Replace Type Code with Enum + Move Method: `EstadoSolicitud.puedePasarA`
+
+- **Smell que cierra:** 5 (Primitive Obsession en el estado). Principio: OCP / encapsulamiento de reglas.
+- **Archivos:** `EstadoSolicitud.java` (nuevo), `Solicitud.java`, `SistemaSolicitudes.java`.
+- **Qué se hizo:** `Solicitud.estado` pasó de `String` a `EstadoSolicitud`. Las transiciones válidas, que estaban
+  en ifs anidados con un booleano dentro de `cambiarEstado`, se movieron al enum (`puedePasarA`, `esFinal`).
+  `getEstado()` sigue devolviendo `String`.
+
+Antes (`cambiarEstado`):
+```java
+boolean transicionValida = false;
+if (solicitud.estado.equals("PENDIENTE")) {
+    if (nuevoEstado.equals("EN_PROCESO")) {
+        transicionValida = true;
+    } else if (nuevoEstado.equals("RECHAZADA")) {
+        transicionValida = true;
+    }
+} else if (solicitud.estado.equals("EN_PROCESO")) {
+    ...
+}
+if (!transicionValida) { ... }
+solicitud.estado = nuevoEstado;
+```
+
+Después:
+```java
+public enum EstadoSolicitud {
+    PENDIENTE, EN_PROCESO, RESUELTA, RECHAZADA;
+    static {
+        PENDIENTE.destinosPermitidos = EnumSet.of(EN_PROCESO, RECHAZADA);
+        EN_PROCESO.destinosPermitidos = EnumSet.of(RESUELTA, RECHAZADA);
+        ...
+    }
+    public boolean puedePasarA(EstadoSolicitud destino) { return destinosPermitidos.contains(destino); }
+    public boolean esFinal() { return destinosPermitidos.isEmpty(); }
+}
+
+EstadoSolicitud destino = EstadoSolicitud.desde(nuevoEstado);
+if (destino == null || !solicitud.estado.puedePasarA(destino)) { ... }
+solicitud.estado = destino;
+```
+
+- **Por qué:** las reglas de transición tienen ahora un lugar propio y se leen como una tabla. Un error de
+  tipeo en el estado ya no compila. `estaVencida`, el conteo del reporte y el límite de pendientes dejan de
+  comparar con literales: usan el enum (`esFinal()`, `EnumMap`, `== PENDIENTE`).
+- **Comportamiento conservado a propósito:** `desde` distingue mayúsculas; un estado desconocido sigue dando
+  "transicion invalida"; y el `NullPointerException` con estado nulo (defecto D5, fijado por
+  `d5_cambiarEstadoConEstadoNuloLanzaNullPointerException`) se mantiene con un `Objects.requireNonNull` marcado
+  con un comentario, que se borra cuando se corrija D5. Igual que en la versión original, no se lanza si la solicitud
+  ya está en un estado final.
+- **Diferencia mínima, solo para archivos manipulados a mano:** igual que en R6, un estado inexistente en el CSV
+  corta la carga en esa línea.
+- **Verificación:** `mvn test` → 49 tests, 0 fallas.
+
+---
+
 ## Pendientes y decisiones abiertas
 
 | Smell | Estado | Nota |
