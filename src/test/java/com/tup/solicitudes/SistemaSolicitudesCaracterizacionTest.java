@@ -199,10 +199,13 @@ class SistemaSolicitudesCaracterizacionTest {
         assertTrue(sis.getSolicitudes().isEmpty());
     }
 
+    // CAMBIO DELIBERADO (correccion del defecto D2): antes se llamaba tipoNuloLanzaNullPointerException y
+    // exigia que un tipo nulo tirara NullPointerException. Ahora es un tipo invalido mas: codigo -3.
     @Test
-    void tipoNuloLanzaNullPointerException() {
-        assertThrows(NullPointerException.class,
-                () -> sis.registrarSolicitud("L001", "Ana", "a@b.com", null, "d", 1, false, HOY));
+    void tipoNuloEsTipoInvalidoYDevuelveMenosTres() {
+        assertEquals(-3, sis.registrarSolicitud("L001", "Ana", "a@b.com", null, "d", 1, false, HOY));
+        assertTrue(consola().contains("Error: tipo de solicitud invalido"));
+        assertTrue(sis.getSolicitudes().isEmpty());
     }
 
     @Test

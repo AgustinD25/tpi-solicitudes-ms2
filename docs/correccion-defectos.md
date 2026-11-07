@@ -24,3 +24,14 @@ Cada entrada dice: qué pasaba, qué pasa ahora, qué test cambió y por qué es
   que se muestra el mensaje.
 - **Por qué mejora:** asignar a alguien una solicitud que ya terminó no tiene sentido de negocio y falseaba el
   reporte de quién resolvió qué.
+
+---
+
+## D2. Un tipo nulo rompía el registro con una excepción
+
+- **Antes:** `registrarSolicitud(..., tipo = null, ...)` lanzaba `NullPointerException` en vez de informar el error
+  como con cualquier otro tipo inválido.
+- **Ahora:** un tipo nulo es un tipo inválido más: devuelve `-3` y muestra `Error: tipo de solicitud invalido`.
+- **Código:** `TipoSolicitud.desde(null)` devuelve `null` en vez de lanzar (se quitó el `Objects.requireNonNull`).
+- **Test cambiado:** `tipoNuloLanzaNullPointerException` → `tipoNuloEsTipoInvalidoYDevuelveMenosTres`.
+- **Por qué mejora:** la API no debería caerse por un dato de entrada; todos los errores de datos se informan igual.
