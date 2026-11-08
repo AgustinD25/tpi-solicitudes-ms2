@@ -88,7 +88,7 @@ public class RepositorioCsv extends RepositorioEnMemoria {
             }
             Responsable responsable = buscarResponsable.apply(pendiente.getValue());
             if (responsable != null) {
-                solicitud.asignarResponsable(responsable);
+                solicitud.restaurarResponsable(responsable);
                 pendientes.remove();
             }
         }

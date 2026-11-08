@@ -249,7 +249,7 @@ A completar a medida que se resuelven los hallazgos.
 | ID | Estado (Corregido / Diferido / Rechazado) | Commit | Justificación o nota |
 |---|---|---|---|
 | CR-01 | Corregido | `5d8bd02` | Carga todo o nada: si alguna linea es invalida no se carga nada, se informan las lineas, se reservan los ids hasta el mayor visto y, antes de reescribir, se hace una copia `.bak-<fecha>`. Captura excepciones especificas. 4 tests nuevos (`RepositorioCsvTest`). |
-| CR-02 | Abierto | | |
+| CR-02 | Corregido | `005bd81` | El JSON escapa comillas, barra invertida y caracteres de control; el CSV usa el mismo escape que el archivo de datos (`FormatoCsv`). 4 tests nuevos (`ReporteSimpleEscapesTest`). |
 | CR-03 | Abierto | | |
 | CR-04 | Abierto | | |
 | CR-05 | Abierto | | |

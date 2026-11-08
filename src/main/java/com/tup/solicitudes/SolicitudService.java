@@ -55,16 +55,9 @@ public class SolicitudService {
 
     public Solicitud asignarResponsable(int idSolicitud, int idResponsable) {
         Solicitud solicitud = buscarPorId(idSolicitud);
-        if (solicitud.getEstadoSolicitud().esFinal()) {
-            throw new SolicitudCerradaException();
-        }
         Responsable responsable = responsableService.buscarPorId(idResponsable)
                 .orElseThrow(() -> new ResponsableNoEncontradoException(idResponsable));
-        if (!solicitud.puedeSerAtendidaPor(responsable)) {
-            throw new AreaIncorrectaException(responsable.getArea(),
-                    solicitud.getTipoSolicitud().getAreaResponsable());
-        }
-        solicitud.asignarResponsable(responsable);
+        solicitud.asignarResponsable(responsable);   // la entidad valida que este abierta y que el area coincida
         solicitudRepository.actualizar(solicitud);
         return solicitud;
     }
