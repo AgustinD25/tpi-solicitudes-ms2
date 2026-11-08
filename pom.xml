@@ -13,6 +13,11 @@
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <junit.version>5.10.2</junit.version>
+    <jacoco.version>0.8.12</jacoco.version>
+    <!-- argLine lo completa JaCoCo (agente de cobertura); test.jvm.args permite agregar opciones de la JVM de los
+         tests desde la linea de comandos, por ejemplo -Dtest.jvm.args=-Xmx128m en equipos con poca memoria -->
+    <argLine></argLine>
+    <test.jvm.args></test.jvm.args>
   </properties>
 
   <dependencies>
@@ -35,6 +40,29 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
+        <configuration>
+          <argLine>@{argLine} ${test.jvm.args}</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>agente-de-cobertura</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>reporte-de-cobertura</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

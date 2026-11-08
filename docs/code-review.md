@@ -253,7 +253,7 @@ A completar a medida que se resuelven los hallazgos.
 | CR-03 | Corregido | `98a840b` | `Solicitud.asignarResponsable` valida que este abierta y que el area coincida (`SolicitudCerradaException` / `AreaIncorrectaException`); el servicio solo orquesta. 6 tests unitarios (`SolicitudTest`). Unica diferencia observable: con solicitud cerrada y responsable inexistente se informa primero el responsable. |
 | CR-04 | Corregido | `931a89a` | `enum Area` concentra los textos (antes en `TipoSolicitud`, `ResponsableService` y `Main`); `registrarResponsable` con area nula devuelve `null` y muestra `Error: area invalida`. Ya no queda ningun texto de area fuera del enum. 6 tests nuevos (`ResponsableServiceTest`). |
 | CR-05 | Abierto | | |
-| CR-06 | Abierto | | |
+| CR-06 | Corregido | `9676e07` | `ConfiguracionSistema` es el unico lugar de armado; la fachada tiene dos constructores (`String` y uno privado con las piezas, expuesto como `SistemaSolicitudes.con(...)` para que `new SistemaSolicitudes(null)` no sea ambiguo); `SolicitudService` depende de la interfaz `CatalogoResponsables`; el sistema se puede armar con CSV y su catalogo. 3 tests nuevos (`ConfiguracionSistemaTest`). |
 | CR-07 | Abierto | | |
 | CR-08 | Abierto | | |
 | CR-09 | Abierto | | |
