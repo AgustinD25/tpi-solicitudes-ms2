@@ -86,3 +86,17 @@ Cada una indica dónde está el detalle.
   contrato viejo dentro del dominio (acoplamiento al revés). Son solo tres casos, no crecen (el contrato original está
   congelado) y un `Map<Class<?>, Integer>` sería más declarativo pero no más simple ni más seguro.
 - **Cuándo se reconsideraría:** si el contrato heredado dejara de estar congelado o los códigos pasaran de unos pocos.
+
+## 13. Las consultas del repositorio CSV completan los responsables pendientes (CR-11)
+- **Decisión:** `RepositorioCsv.listarTodas()` y `buscarPorId()` resuelven, antes de responder, los responsables que el
+  archivo nombraba pero que todavía no estaban registrados al cargar. Se documentó y no se cambió.
+- **Por qué existe:** el archivo guarda solo el id del responsable y los responsables se registran *después* de
+  `cargar()`. Hay que guardar ese id y completarlo cuando el responsable aparezca; si no, la asignación se perdería al
+  reescribir el archivo.
+- **Por qué no se movió:** la alternativa (que `ResponsableService` avise al repositorio al registrar) crea una
+  dependencia nueva y circular entre catálogo y persistencia, y complica el armado de `ConfiguracionSistema` por un
+  caso que solo ocurre al arrancar.
+- **Por qué es aceptable:** es idempotente (consultar dos veces da lo mismo), solo toca memoria (nunca escribe el
+  archivo), es un `Map` acotado que se vacía solo a medida que se resuelve, y tiene tests (`RepositorioCsvTest`).
+- **Cuándo se reconsideraría:** si el repositorio se usara desde varios hilos, donde una lectura que modifica sí sería
+  un problema.
