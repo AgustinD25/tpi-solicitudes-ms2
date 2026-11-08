@@ -67,6 +67,13 @@ public class RepositorioEnMemoria implements SolicitudRepository, EstudianteRepo
         estudiantes.add(estudiante);
     }
 
+    /** Evita que se reutilicen ids: el proximo id sera mayor que el indicado (no hace nada si ya lo es). */
+    protected void reservarIdsHasta(int mayorIdUsado) {
+        if (mayorIdUsado > ultimoId) {
+            ultimoId = mayorIdUsado;
+        }
+    }
+
     /** Para las subclases que releen su almacenamiento: descarta lo que hay en memoria y reinicia los ids. */
     protected void vaciar() {
         solicitudes.clear();
