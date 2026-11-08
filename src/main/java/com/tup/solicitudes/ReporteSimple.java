@@ -3,7 +3,7 @@ package com.tup.solicitudes;
 import java.util.List;
 
 public class ReporteSimple implements ExportadorCSV, ExportadorJSON {
-    private List<Solicitud> datos;
+    private final List<Solicitud> datos;
 
     public ReporteSimple(List<Solicitud> datos) {
         this.datos = datos;

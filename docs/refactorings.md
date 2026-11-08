@@ -5,7 +5,11 @@ Un refactoring por commit. Después de cada uno se corrió `mvn test`: los tests
 `ExportacionCaracterizacionTest` **no se modificaron** (49 tests, mismos resultados).
 Los números de smell son los de `docs/diagnostico-deuda-tecnica.md`.
 
-Restricción de diseño: los tests acceden a `sis.lst`, `sis.est`, `sis.resp` y a los campos públicos de
+> **Nota histórica (code review CR-13):** lo que sigue describe la restricción vigente *al empezar* el refactoring.
+> Dejó de ser cierta: con la excepción E1 (acceso por getters) y los refactorings R8 y R9 los campos ya están
+> encapsulados y los tipos son enums.
+
+Restricción de diseño al empezar: los tests acceden a `sis.lst`, `sis.est`, `sis.resp` y a los campos públicos de
 `Solicitud`/`Estudiante`/`Responsable` (por ejemplo `s.estado` como `String`). Mientras esos tests no se
 reescriban a propósito, esos miembros no se pueden renombrar ni encapsular (ver "Pendientes" al final).
 

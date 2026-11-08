@@ -183,4 +183,4 @@ mvn pmd:pmd
 - **Reporte:** [`docs/evidencias/pmd-estado-inicial.xml`](evidencias/pmd-estado-inicial.xml) (copia de `target/pmd.xml`).
 - **Resultado:** 2 violaciones, ambas `EmptyCatchBlock` (prioridad 3) en `SistemaSolicitudes.guardar` (líneas 329–330) y `SistemaSolicitudes.cargar` (373–374). Coinciden exactamente con la evidencia del smell 9 y con el defecto D3.
 - **Alcance:** el conjunto por defecto solo detecta problemas de ese tipo. No marca la clase dios, los métodos largos, la duplicación, los números mágicos ni los nombres pobres (smells 1, 2, 7, 8 y 10), que quedan respaldados por el análisis manual de las secciones anteriores. Para respaldarlos con una herramienta haría falta un conjunto de reglas propio (por ejemplo `GodClass`, `CyclomaticComplexity`, `ExcessiveParameterList`, `AvoidDuplicateLiterals`) o CPD; queda como mejora si se necesita más evidencia.
-- **Pendiente:** la cobertura de los tests de caracterización con JaCoCo no se midió todavía.
+- **Cobertura:** medida con JaCoCo en la etapa de code review (CR-07): 96,6 % de líneas sin contar `Main`. Ver `docs/evidencias/jacoco-resumen.md`.
