@@ -36,7 +36,7 @@ public class SolicitudService {
         Estudiante estudiante = buscarOCrearEstudiante(estudianteIngresado);
         int prioridadFinal = calcularPrioridad(datos.prioridad(), datos.urgente());
         Solicitud nueva = new Solicitud(solicitudRepository.generarId(), estudiante,
-                TipoSolicitud.desde(datos.tipo()), datos.descripcion(), prioridadFinal, datos.urgente(),
+                TipoSolicitud.desde(datos.tipo()).orElseThrow(TipoInvalidoException::new), datos.descripcion(), prioridadFinal, datos.urgente(),
                 datos.fecha());
         solicitudRepository.guardar(nueva);
         return nueva;
@@ -44,10 +44,9 @@ public class SolicitudService {
 
     public Solicitud cambiarEstado(int id, String nuevoEstado) {
         Solicitud solicitud = buscarPorId(id);
-        EstadoSolicitud destino = EstadoSolicitud.desde(nuevoEstado);
-        if (destino == null || !solicitud.puedePasarA(destino)) {
-            throw new TransicionInvalidaException(solicitud.getEstado(), nuevoEstado);
-        }
+        EstadoSolicitud destino = EstadoSolicitud.desde(nuevoEstado)
+                .filter(solicitud::puedePasarA)
+                .orElseThrow(() -> new TransicionInvalidaException(solicitud.getEstado(), nuevoEstado));
         solicitud.pasarA(destino);
         solicitudRepository.actualizar(solicitud);
         return solicitud;
@@ -97,7 +96,7 @@ public class SolicitudService {
         if (datos.nombre() == null || datos.nombre().trim().length() == 0) {
             throw new DatosInvalidosException("nombre vacio");
         }
-        if (TipoSolicitud.desde(datos.tipo()) == null) {
+        if (TipoSolicitud.desde(datos.tipo()).isEmpty()) {
             throw new TipoInvalidoException();
         }
         if (datos.prioridad() < PRIORIDAD_MINIMA || datos.prioridad() > PRIORIDAD_MAXIMA) {

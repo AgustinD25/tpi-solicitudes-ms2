@@ -38,14 +38,14 @@ public class RepositorioCsv extends RepositorioEnMemoria {
     private static final DateTimeFormatter FORMATO_COPIA = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     private final String rutaArchivo;
-    private final Function<Integer, Responsable> buscarResponsable;
+    private final Function<Integer, Optional<Responsable>> buscarResponsable;
     private final Consumer<String> avisarError;
     // true si el archivo existe pero no se pudo cargar: antes de reescribirlo se hace una copia de seguridad
     private boolean archivoDanado = false;
     // Solicitudes cargadas cuyo responsable todavia no estaba registrado: solicitud -> id guardado en el archivo
     private final Map<Solicitud, Integer> responsablePendiente = new IdentityHashMap<>();
 
-    public RepositorioCsv(String rutaArchivo, Function<Integer, Responsable> buscarResponsable,
+    public RepositorioCsv(String rutaArchivo, Function<Integer, Optional<Responsable>> buscarResponsable,
                           Consumer<String> avisarError) {
         this.rutaArchivo = rutaArchivo;
         this.buscarResponsable = buscarResponsable;
@@ -86,9 +86,9 @@ public class RepositorioCsv extends RepositorioEnMemoria {
                 pendientes.remove();          // ya se le asigno uno a mano: gana la asignacion nueva
                 continue;
             }
-            Responsable responsable = buscarResponsable.apply(pendiente.getValue());
-            if (responsable != null) {
-                solicitud.restaurarResponsable(responsable);
+            Optional<Responsable> responsable = buscarResponsable.apply(pendiente.getValue());
+            if (responsable.isPresent()) {
+                solicitud.restaurarResponsable(responsable.get());
                 pendientes.remove();
             }
         }
@@ -233,21 +233,17 @@ public class RepositorioCsv extends RepositorioEnMemoria {
                     + " campos y la linea tiene " + campos.size());
         }
         int id = Integer.parseInt(campos.get(0));
-        TipoSolicitud tipo = TipoSolicitud.desde(campos.get(4));
-        if (tipo == null) {
-            throw new IllegalArgumentException("tipo desconocido: " + campos.get(4));
-        }
+        TipoSolicitud tipo = TipoSolicitud.desde(campos.get(4))
+                .orElseThrow(() -> new IllegalArgumentException("tipo desconocido: " + campos.get(4)));
         int prioridad = Integer.parseInt(campos.get(6));
         boolean urgente = Boolean.parseBoolean(campos.get(7));
-        EstadoSolicitud estado = EstadoSolicitud.desde(campos.get(8));
-        if (estado == null) {
-            throw new IllegalArgumentException("estado desconocido: " + campos.get(8));
-        }
+        EstadoSolicitud estado = EstadoSolicitud.desde(campos.get(8))
+                .orElseThrow(() -> new IllegalArgumentException("estado desconocido: " + campos.get(8)));
         int idResponsable = Integer.parseInt(campos.get(9));
         LocalDate fechaCreacion = LocalDate.parse(campos.get(10));
         Estudiante estudiante = estudiantes.computeIfAbsent(campos.get(1),
                 legajo -> new Estudiante(legajo, campos.get(2), campos.get(3)));
-        Responsable responsable = buscarResponsable.apply(idResponsable);
+        Responsable responsable = buscarResponsable.apply(idResponsable).orElse(null);   // null: aun sin registrar
         Solicitud solicitud = new Solicitud(id, estudiante, tipo, campos.get(5), prioridad, urgente, fechaCreacion);
         solicitud.restaurar(estado, responsable);
         if (responsable == null && idResponsable != ID_SIN_RESPONSABLE) {

@@ -40,7 +40,7 @@ class ConfiguracionSistemaTest {
         Path archivo = tmp.resolve("propio.csv");
         ResponsableService catalogo = new ResponsableService();
         RepositorioCsv repositorio = new RepositorioCsv(archivo.toString(),
-                id -> catalogo.buscarPorId(id).orElse(null), mensaje -> { });
+                id -> catalogo.buscarPorId(id), mensaje -> { });
         SistemaSolicitudes sis = SistemaSolicitudes.con(ConfiguracionSistema.con(repositorio, repositorio, catalogo));
 
         sis.registrarResponsable(1, "Laura", "laura@ejemplo.edu", "Alumnado");

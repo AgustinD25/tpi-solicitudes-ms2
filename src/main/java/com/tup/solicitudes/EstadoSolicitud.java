@@ -1,6 +1,7 @@
 package com.tup.solicitudes;
 
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -31,13 +32,13 @@ public enum EstadoSolicitud {
         return destinosPermitidos.isEmpty();
     }
 
-    /** Devuelve el estado con ese nombre exacto (distingue mayusculas) o null si no existe o es null. */
-    public static EstadoSolicitud desde(String nombre) {
+    /** Devuelve el estado con ese nombre exacto (distingue mayusculas), o vacio si no existe o es null. */
+    public static Optional<EstadoSolicitud> desde(String nombre) {
         for (EstadoSolicitud estado : values()) {
             if (estado.name().equals(nombre)) {
-                return estado;
+                return Optional.of(estado);
             }
         }
-        return null;
+        return Optional.empty();
     }
 }

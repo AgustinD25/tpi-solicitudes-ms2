@@ -1,7 +1,7 @@
 package com.tup.solicitudes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,12 +21,12 @@ class TipoSolicitudTest {
     }
 
     @Test
-    void desdeBuscaPorNombreExactoYDevuelveNullSiNoExisteOEsNulo() {
+    void desdeBuscaPorNombreExactoYDevuelveVacioSiNoExisteOEsNulo() {
         for (TipoSolicitud tipo : TipoSolicitud.values()) {
-            assertEquals(tipo, TipoSolicitud.desde(tipo.name()));
+            assertEquals(tipo, TipoSolicitud.desde(tipo.name()).orElseThrow());
         }
-        assertNull(TipoSolicitud.desde("certificado"));
-        assertNull(TipoSolicitud.desde("FOO"));
-        assertNull(TipoSolicitud.desde(null));
+        assertTrue(TipoSolicitud.desde("certificado").isEmpty());
+        assertTrue(TipoSolicitud.desde("FOO").isEmpty());
+        assertTrue(TipoSolicitud.desde(null).isEmpty());
     }
 }

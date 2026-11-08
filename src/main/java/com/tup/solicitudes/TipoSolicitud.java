@@ -1,5 +1,7 @@
 package com.tup.solicitudes;
 
+import java.util.Optional;
+
 /**
  * Tipos de solicitud con su plazo de resolucion y el area que las atiende.
  * Agregar un tipo nuevo es agregar una constante aca (OCP).
@@ -26,13 +28,13 @@ public enum TipoSolicitud {
         return areaResponsable;
     }
 
-    /** Devuelve el tipo con ese nombre exacto (distingue mayusculas) o null si no existe o el nombre es null. */
-    public static TipoSolicitud desde(String nombre) {
+    /** Devuelve el tipo con ese nombre exacto (distingue mayusculas), o vacio si no existe o el nombre es null. */
+    public static Optional<TipoSolicitud> desde(String nombre) {
         for (TipoSolicitud tipo : values()) {
             if (tipo.name().equals(nombre)) {
-                return tipo;
+                return Optional.of(tipo);
             }
         }
-        return null;
+        return Optional.empty();
     }
 }

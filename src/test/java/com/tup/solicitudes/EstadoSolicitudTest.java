@@ -2,7 +2,6 @@ package com.tup.solicitudes;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.EnumSet;
@@ -60,12 +59,12 @@ class EstadoSolicitudTest {
     }
 
     @Test
-    void desdeBuscaPorNombreExactoYDevuelveNullSiNoExisteOEsNulo() {
+    void desdeBuscaPorNombreExactoYDevuelveVacioSiNoExisteOEsNulo() {
         for (EstadoSolicitud estado : EstadoSolicitud.values()) {
-            assertEquals(estado, EstadoSolicitud.desde(estado.name()));
+            assertEquals(estado, EstadoSolicitud.desde(estado.name()).orElseThrow());
         }
-        assertNull(EstadoSolicitud.desde("pendiente"));
-        assertNull(EstadoSolicitud.desde("INVENTADO"));
-        assertNull(EstadoSolicitud.desde(null));
+        assertTrue(EstadoSolicitud.desde("pendiente").isEmpty());
+        assertTrue(EstadoSolicitud.desde("INVENTADO").isEmpty());
+        assertTrue(EstadoSolicitud.desde(null).isEmpty());
     }
 }

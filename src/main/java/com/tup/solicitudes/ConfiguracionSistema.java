@@ -19,7 +19,7 @@ public final class ConfiguracionSistema {
         ResponsableService responsables = new ResponsableService();
         RepositorioEnMemoria repositorio = rutaArchivo == null
                 ? new RepositorioEnMemoria()
-                : new RepositorioCsv(rutaArchivo, id -> responsables.buscarPorId(id).orElse(null),
+                : new RepositorioCsv(rutaArchivo, id -> responsables.buscarPorId(id),
                         mensaje -> System.out.println("Error: " + mensaje));
         return con(repositorio, repositorio, responsables);
     }
