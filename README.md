@@ -43,7 +43,7 @@ Marta Diaz de Docencia).
 
 - Java 17 o superior (usa `record` y `Optional`)
 - Maven 3.8+
-- JUnit 5 (106 tests) y JaCoCo (cobertura de líneas del 96,6 % sin contar `Main`)
+- JUnit 5 (106 tests) y JaCoCo (cobertura de líneas del 97,5 % sin contar `Main`)
 - PMD (análisis estático): reporte en `docs/evidencias/`
 
 ## Instalación y uso
@@ -93,6 +93,8 @@ getters) están documentados en `docs/correccion-defectos.md` y `docs/refactorin
 | `refactorings.md` | Cada refactoring con el fragmento antes/después y el smell que cierra |
 | `correccion-defectos.md` | Defectos detectados con los tests y su corrección, uno por commit |
 | `decisiones-tecnicas.md` | Decisiones de diseño y su justificación |
+| `code-review.md` | Checklist de code review, hallazgos, correcciones y criterios de aceptación |
+| `conclusiones.md` | Conclusiones, dificultades, límites y mejoras pendientes |
 | `evidencias/` | Reporte PMD del estado inicial y evidencia del cambio de acceso en los tests |
 
 ## Hitos (tags de Git)
