@@ -97,6 +97,6 @@ Cada una indica dónde está el detalle.
   dependencia nueva y circular entre catálogo y persistencia, y complica el armado de `ConfiguracionSistema` por un
   caso que solo ocurre al arrancar.
 - **Por qué es aceptable:** es idempotente (consultar dos veces da lo mismo), solo toca memoria (nunca escribe el
-  archivo), es un `Map` acotado que se vacía solo a medida que se resuelve, y tiene tests (`RepositorioCsvTest`).
+  archivo), es un `Map` acotado que se vacía solo a medida que se resuelve, y tiene tests (`DefectosLatentesCaracterizacionTest`: el orden de cargar y registrar responsables no importa, y volver a guardar no pierde la asignación).
 - **Cuándo se reconsideraría:** si el repositorio se usara desde varios hilos, donde una lectura que modifica sí sería
   un problema.

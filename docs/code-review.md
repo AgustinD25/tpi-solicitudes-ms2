@@ -257,8 +257,8 @@ A completar a medida que se resuelven los hallazgos.
 | CR-07 | Corregido | `804b86b` | 27 tests unitarios nuevos de `EstadoSolicitud`, `TipoSolicitud`, `FormatoCsv`, `ValidadorEmail` y `SolicitudService`, que se suman a los agregados en CR-01 a CR-06 (101 en total). JaCoCo 0.8.12 en el `pom.xml`: 96,6 % de lineas sin contar `Main` (umbral propuesto: 80 %). Evidencia en `docs/evidencias/jacoco-resumen.md` y `jacoco-cobertura.csv`. |
 | CR-08 | Abierto | | |
 | CR-09 | Abierto | | |
-| CR-10 | Abierto | | |
-| CR-11 | Abierto | | |
-| CR-12 | Abierto | | |
-| CR-13 | Abierto | | |
-| CR-14 | Abierto | | |
+| CR-10 | Corregido (justificado) | `4118695` | Se deja la cadena de `instanceof` a proposito y se explica en `decisiones-tecnicas.md` (decision 12): la traduccion al contrato heredado es responsabilidad del adaptador y las excepciones de dominio no deben conocer los codigos. |
+| CR-11 | Corregido (documentado) | `b060bb6` | Se documenta en `decisiones-tecnicas.md` (decision 13) por que las consultas completan los responsables pendientes: es idempotente, solo toca memoria y evita una dependencia circular catalogo-persistencia. Cubierto por tests existentes. |
+| CR-12 | Corregido | `a857015` | Lectura y escritura con `Files.newBufferedReader/Writer` y UTF-8. Un archivo que no se puede decodificar se trata como danado (copia antes de reescribir). 2 tests nuevos en `RepositorioCsvTest` (ida y vuelta con "Núñez" y archivo Latin-1). |
+| CR-13 | Corregido (parcial) | `a234767` | `refactorings.md` marca como historica la restriccion de campos publicos; el diagnostico cierra el pendiente de JaCoCo; `ReporteSimple.datos` es `final`; se elimino el `.gitkeep`. **No se renombro `ReporteSimple`**: obligaria a editar `ExportacionCaracterizacionTest`, y no se justifica una excepcion mas por un nombre. |
+| CR-14 | Corregido | `d900bbb` | `Solicitud` (estudiante, tipo, fecha) y `Estudiante` (legajo, nombre, email) usan `Objects.requireNonNull`; la descripcion puede faltar. `pasarA` lanza `TransicionInvalidaException` con el mismo mensaje. 3 tests nuevos en `SolicitudTest`. |

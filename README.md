@@ -43,7 +43,7 @@ Marta Diaz de Docencia).
 
 - Java 17 o superior (usa `record` y `Optional`)
 - Maven 3.8+
-- JUnit 5 (101 tests) y JaCoCo (cobertura de líneas del 96,6 % sin contar `Main`)
+- JUnit 5 (106 tests) y JaCoCo (cobertura de líneas del 96,6 % sin contar `Main`)
 - PMD (análisis estático): reporte en `docs/evidencias/`
 
 ## Instalación y uso
