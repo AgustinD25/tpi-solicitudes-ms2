@@ -76,3 +76,13 @@ Cada una indica dónde está el detalle.
   los `catch` vacíos; el resto del diagnóstico es manual y está justificado en `diagnostico-deuda-tecnica.md`).
 - **Sin framework de persistencia ni de inyección de dependencias:** el sistema es chico y alcanza con pasar las
   dependencias por constructor.
+
+## 12. La fachada traduce excepciones a códigos con una cadena de `instanceof` (CR-10)
+- **Decisión:** `SistemaSolicitudes.codigoDeError` decide el código negativo (-1/-2/-3/-4) según el tipo de la excepción
+  de dominio, con una cadena de `instanceof`, y se dejó así a propósito.
+- **Por qué:** el trabajo eliminó los `if/else` por tipo del *dominio* (smell 5) porque ahí cada alta de un tipo obligaba
+  a tocar varios lugares. Acá es distinto: la traducción es responsabilidad exclusiva del adaptador, que existe para
+  conservar el contrato heredado. La alternativa de que cada excepción conozca su código metería un detalle del
+  contrato viejo dentro del dominio (acoplamiento al revés). Son solo tres casos, no crecen (el contrato original está
+  congelado) y un `Map<Class<?>, Integer>` sería más declarativo pero no más simple ni más seguro.
+- **Cuándo se reconsideraría:** si el contrato heredado dejara de estar congelado o los códigos pasaran de unos pocos.
