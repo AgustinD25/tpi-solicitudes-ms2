@@ -1,6 +1,7 @@
 package com.tup.solicitudes;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class Solicitud {
     private final int id;
@@ -16,12 +17,12 @@ public class Solicitud {
     public Solicitud(int id, Estudiante estudiante, TipoSolicitud tipo, String descripcion,
                      int prioridad, boolean urgente, LocalDate fechaCreacion) {
         this.id = id;
-        this.estudiante = estudiante;
-        this.tipo = tipo;
-        this.descripcion = descripcion;
+        this.estudiante = Objects.requireNonNull(estudiante, "estudiante");
+        this.tipo = Objects.requireNonNull(tipo, "tipo");
+        this.descripcion = descripcion;                       // la descripcion puede faltar
         this.prioridad = prioridad;
         this.urgente = urgente;
-        this.fechaCreacion = fechaCreacion;
+        this.fechaCreacion = Objects.requireNonNull(fechaCreacion, "fechaCreacion");
     }
 
     public int getId() {
@@ -75,7 +76,7 @@ public class Solicitud {
     /** Cambia de estado respetando las transiciones permitidas. */
     public void pasarA(EstadoSolicitud destino) {
         if (!estado.puedePasarA(destino)) {
-            throw new IllegalStateException("transicion invalida de " + estado + " a " + destino);
+            throw new TransicionInvalidaException(estado.name(), String.valueOf(destino));
         }
         estado = destino;
     }

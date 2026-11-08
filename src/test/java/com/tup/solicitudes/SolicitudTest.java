@@ -20,6 +20,34 @@ class SolicitudTest {
         return new Solicitud(1, ana, tipo, "descripcion", 1, false, FECHA);
     }
 
+    // ---------- CR-14: invariantes de construccion ----------
+
+    @Test
+    void noSePuedeConstruirConEstudianteTipoOFechaNulos() {
+        assertThrows(NullPointerException.class,
+                () -> new Solicitud(1, null, TipoSolicitud.CERTIFICADO, "d", 1, false, FECHA));
+        assertThrows(NullPointerException.class, () -> new Solicitud(1, ana, null, "d", 1, false, FECHA));
+        assertThrows(NullPointerException.class,
+                () -> new Solicitud(1, ana, TipoSolicitud.CERTIFICADO, "d", 1, false, null));
+    }
+
+    @Test
+    void elEstudianteExigeLegajoNombreYEmail() {
+        assertThrows(NullPointerException.class, () -> new Estudiante(null, "Ana", "a@b.com"));
+        assertThrows(NullPointerException.class, () -> new Estudiante("L1", null, "a@b.com"));
+        assertThrows(NullPointerException.class, () -> new Estudiante("L1", "Ana", null));
+    }
+
+    @Test
+    void unaTransicionInvalidaLanzaUnaExcepcionDeDominio() {
+        Solicitud solicitud = solicitudDe(TipoSolicitud.CERTIFICADO);
+
+        TransicionInvalidaException error = assertThrows(TransicionInvalidaException.class,
+                () -> solicitud.pasarA(EstadoSolicitud.RESUELTA));
+
+        assertEquals("transicion invalida de PENDIENTE a RESUELTA", error.getMessage());
+    }
+
     // ---------- CR-03: la entidad protege la asignacion ----------
 
     @Test
