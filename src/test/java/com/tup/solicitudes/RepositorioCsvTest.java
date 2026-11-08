@@ -61,6 +61,39 @@ class RepositorioCsvTest {
         }
     }
 
+    // ---------- CR-12: codificacion UTF-8 explicita ----------
+
+    @Test
+    void elArchivoSeGuardaEnUtf8YUnNombreConTildeVuelveIgual() throws IOException {
+        SistemaSolicitudes escritor = new SistemaSolicitudes(archivo.toString());
+        escritor.registrarSolicitud("L001", "Núñez", "nunez@ejemplo.edu", "CERTIFICADO", "ñandú", 1, false, FECHA);
+
+        byte[] bytes = Files.readAllBytes(archivo);
+        assertTrue(new String(bytes, StandardCharsets.UTF_8).contains("Núñez"));
+        assertTrue(new String(bytes, StandardCharsets.ISO_8859_1).contains("NÃºÃ±ez"));   // 2 bytes por letra: UTF-8
+
+        SistemaSolicitudes lector = new SistemaSolicitudes(archivo.toString());
+        lector.cargar();
+        assertEquals("Núñez", lector.getSolicitudes().get(0).getEstudiante().getNombre());
+        assertEquals("ñandú", lector.getSolicitudes().get(0).getDescripcion());
+    }
+
+    @Test
+    void unArchivoEnOtraCodificacionNoSeCargaNiSePisaSinCopia() throws IOException {
+        byte[] latin1 = linea(1, "CERTIFICADO").replace("Estudiante 1", "Núñez").getBytes(StandardCharsets.ISO_8859_1);
+        Files.write(archivo, latin1);
+        SistemaSolicitudes sis = new SistemaSolicitudes(archivo.toString());
+
+        sis.cargar();
+
+        assertTrue(sis.getSolicitudes().isEmpty());
+        assertTrue(consola().contains("Error: no se pudo leer el archivo"));
+        sis.registrarSolicitud("L009", "Zoe", "zoe@ejemplo.edu", "CERTIFICADO", "d", 1, false, FECHA);
+        List<Path> copias = copiasDeSeguridad();
+        assertEquals(1, copias.size());
+        assertTrue(java.util.Arrays.equals(latin1, Files.readAllBytes(copias.get(0))));
+    }
+
     // ---------- CR-01: archivo danado ----------
 
     @Test

@@ -1,10 +1,10 @@
 package com.tup.solicitudes;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -113,7 +113,7 @@ public class RepositorioCsv extends RepositorioEnMemoria {
         if (archivoDanado && !respaldarArchivoDanado()) {
             return;
         }
-        try (FileWriter escritor = new FileWriter(rutaArchivo)) {
+        try (BufferedWriter escritor = Files.newBufferedWriter(Path.of(rutaArchivo), StandardCharsets.UTF_8)) {
             escritor.write(contenido.toString());
         } catch (IOException ex) {
             avisarError.accept("no se pudo guardar el archivo " + rutaArchivo + ": " + ex.getMessage());
@@ -181,7 +181,7 @@ public class RepositorioCsv extends RepositorioEnMemoria {
         List<String> lineasInvalidas = new ArrayList<>();
         int mayorIdVisto = 0;
         int numeroDeLinea = 0;
-        try (BufferedReader lector = new BufferedReader(new FileReader(rutaArchivo))) {
+        try (BufferedReader lector = Files.newBufferedReader(Path.of(rutaArchivo), StandardCharsets.UTF_8)) {
             String linea;
             while ((linea = lector.readLine()) != null) {
                 numeroDeLinea++;
@@ -196,6 +196,8 @@ public class RepositorioCsv extends RepositorioEnMemoria {
                 }
             }
         } catch (IOException ex) {
+            // Por ejemplo un archivo guardado con otra codificacion: no se lo reescribe sin antes hacer una copia.
+            archivoDanado = true;
             avisarError.accept("no se pudo leer el archivo " + rutaArchivo + ": " + ex.getMessage());
             return;
         }
