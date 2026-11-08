@@ -106,3 +106,4 @@ getters) están documentados en `docs/correccion-defectos.md` y `docs/refactorin
 | `etapa-refactoring` | Refactorings aplicados (R1 a R14) |
 | `etapa-pruebas` | Defectos corregidos y pruebas en verde |
 | `etapa-docs` | Code review con checklist y correcciones (`docs/code-review.md`) |
+| `estado-refactorizado` | Estado final del código refactorizado, con conclusiones (`docs/conclusiones.md`) |
