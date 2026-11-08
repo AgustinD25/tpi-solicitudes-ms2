@@ -13,8 +13,8 @@ import org.junit.jupiter.api.Test;
 class SolicitudTest {
     private static final LocalDate FECHA = LocalDate.of(2026, 3, 1);
     private final Estudiante ana = new Estudiante("L001", "Ana", "ana@ejemplo.edu");
-    private final Responsable deAlumnado = new Responsable(1, "Laura", "laura@ejemplo.edu", "Alumnado");
-    private final Responsable deAcademica = new Responsable(2, "Carlos", "carlos@ejemplo.edu", "Academica");
+    private final Responsable deAlumnado = new Responsable(1, "Laura", "laura@ejemplo.edu", Area.ALUMNADO);
+    private final Responsable deAcademica = new Responsable(2, "Carlos", "carlos@ejemplo.edu", Area.ACADEMICA);
 
     private Solicitud solicitudDe(TipoSolicitud tipo) {
         return new Solicitud(1, ana, tipo, "descripcion", 1, false, FECHA);
@@ -63,7 +63,7 @@ class SolicitudTest {
     @Test
     void permiteReasignarMientrasEstaAbierta() {
         Solicitud solicitud = solicitudDe(TipoSolicitud.CERTIFICADO);
-        Responsable otroDeAlumnado = new Responsable(3, "Pablo", "pablo@ejemplo.edu", "Alumnado");
+        Responsable otroDeAlumnado = new Responsable(3, "Pablo", "pablo@ejemplo.edu", Area.ALUMNADO);
 
         solicitud.asignarResponsable(deAlumnado);
         solicitud.asignarResponsable(otroDeAlumnado);

@@ -5,15 +5,15 @@ package com.tup.solicitudes;
  * Agregar un tipo nuevo es agregar una constante aca (OCP).
  */
 public enum TipoSolicitud {
-    CERTIFICADO(5, "Alumnado"),
-    EQUIVALENCIA(30, "Academica"),
-    RECLAMO_NOTA(10, "Docencia"),
-    BAJA_MATERIA(7, "Alumnado");
+    CERTIFICADO(5, Area.ALUMNADO),
+    EQUIVALENCIA(30, Area.ACADEMICA),
+    RECLAMO_NOTA(10, Area.DOCENCIA),
+    BAJA_MATERIA(7, Area.ALUMNADO);
 
     private final int plazoDias;
-    private final String areaResponsable;
+    private final Area areaResponsable;
 
-    TipoSolicitud(int plazoDias, String areaResponsable) {
+    TipoSolicitud(int plazoDias, Area areaResponsable) {
         this.plazoDias = plazoDias;
         this.areaResponsable = areaResponsable;
     }
@@ -22,7 +22,7 @@ public enum TipoSolicitud {
         return plazoDias;
     }
 
-    public String getAreaResponsable() {
+    public Area getAreaResponsable() {
         return areaResponsable;
     }
 

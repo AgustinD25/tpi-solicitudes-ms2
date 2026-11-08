@@ -4,9 +4,9 @@ public class Responsable {
     private final int id;
     private final String nombre;
     private final String email;
-    private final String area;
+    private final Area area;
 
-    public Responsable(int id, String nombre, String email, String area) {
+    public Responsable(int id, String nombre, String email, Area area) {
         this.id = id;
         this.nombre = nombre;
         this.email = email;
@@ -25,7 +25,7 @@ public class Responsable {
         return email;
     }
 
-    public String getArea() {
+    public Area getArea() {
         return area;
     }
 }

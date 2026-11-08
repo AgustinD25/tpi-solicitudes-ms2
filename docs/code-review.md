@@ -250,7 +250,7 @@ A completar a medida que se resuelven los hallazgos.
 |---|---|---|---|
 | CR-01 | Corregido | `5d8bd02` | Carga todo o nada: si alguna linea es invalida no se carga nada, se informan las lineas, se reservan los ids hasta el mayor visto y, antes de reescribir, se hace una copia `.bak-<fecha>`. Captura excepciones especificas. 4 tests nuevos (`RepositorioCsvTest`). |
 | CR-02 | Corregido | `005bd81` | El JSON escapa comillas, barra invertida y caracteres de control; el CSV usa el mismo escape que el archivo de datos (`FormatoCsv`). 4 tests nuevos (`ReporteSimpleEscapesTest`). |
-| CR-03 | Abierto | | |
+| CR-03 | Corregido | `98a840b` | `Solicitud.asignarResponsable` valida que este abierta y que el area coincida (`SolicitudCerradaException` / `AreaIncorrectaException`); el servicio solo orquesta. 6 tests unitarios (`SolicitudTest`). Unica diferencia observable: con solicitud cerrada y responsable inexistente se informa primero el responsable. |
 | CR-04 | Abierto | | |
 | CR-05 | Abierto | | |
 | CR-06 | Abierto | | |

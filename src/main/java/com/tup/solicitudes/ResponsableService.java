@@ -12,10 +12,9 @@ public class ResponsableService {
         if (!ValidadorEmail.esValido(email)) {
             throw new ResponsableInvalidoException("email de responsable invalido");
         }
-        if (!area.equals("Alumnado") && !area.equals("Academica") && !area.equals("Docencia")) {
-            throw new ResponsableInvalidoException("area invalida");
-        }
-        Responsable responsable = new Responsable(id, nombre, email, area);
+        Area areaValida = Area.desde(area)
+                .orElseThrow(() -> new ResponsableInvalidoException("area invalida"));
+        Responsable responsable = new Responsable(id, nombre, email, areaValida);
         responsables.add(responsable);
         return responsable;
     }

@@ -82,7 +82,7 @@ public class Solicitud {
 
     /** Una solicitud solo puede ser atendida por un responsable del area que corresponde a su tipo. */
     public boolean puedeSerAtendidaPor(Responsable candidato) {
-        return candidato.getArea().equals(tipo.getAreaResponsable());
+        return candidato.getArea() == tipo.getAreaResponsable();
     }
 
     /**

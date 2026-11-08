@@ -6,10 +6,10 @@ import java.util.Scanner;
 public class Main {
     public static void main(String[] args) {
         SistemaSolicitudes sis = new SistemaSolicitudes("solicitudes.csv");
-        sis.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", "Alumnado");
-        sis.registrarResponsable(2, "Carlos Ruiz", "carlos.ruiz@ejemplo.edu", "Academica");
-        sis.registrarResponsable(3, "Marta Diaz", "marta.diaz@ejemplo.edu", "Docencia");
-        sis.registrarResponsable(4, "Pablo Soto", "pablo.soto@ejemplo.edu", "Alumnado");
+        sis.registrarResponsable(1, "Laura Gomez", "laura.gomez@ejemplo.edu", Area.ALUMNADO.getNombre());
+        sis.registrarResponsable(2, "Carlos Ruiz", "carlos.ruiz@ejemplo.edu", Area.ACADEMICA.getNombre());
+        sis.registrarResponsable(3, "Marta Diaz", "marta.diaz@ejemplo.edu", Area.DOCENCIA.getNombre());
+        sis.registrarResponsable(4, "Pablo Soto", "pablo.soto@ejemplo.edu", Area.ALUMNADO.getNombre());
         sis.cargar();
 
         Scanner sc = new Scanner(System.in);
