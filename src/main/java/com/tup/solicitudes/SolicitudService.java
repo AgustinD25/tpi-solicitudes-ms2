@@ -15,10 +15,10 @@ public class SolicitudService {
 
     private final SolicitudRepository solicitudRepository;
     private final EstudianteRepository estudianteRepository;
-    private final ResponsableService responsableService;
+    private final CatalogoResponsables responsableService;
 
     public SolicitudService(SolicitudRepository solicitudRepository, EstudianteRepository estudianteRepository,
-                            ResponsableService responsableService) {
+                            CatalogoResponsables responsableService) {
         this.solicitudRepository = solicitudRepository;
         this.estudianteRepository = estudianteRepository;
         this.responsableService = responsableService;
@@ -74,6 +74,15 @@ public class SolicitudService {
 
     public List<Solicitud> listarTodas() {
         return solicitudRepository.listarTodas();
+    }
+
+    public List<Estudiante> listarEstudiantes() {
+        return estudianteRepository.listarTodos();
+    }
+
+    /** Incorpora lo guardado en el almacenamiento persistente (no hace nada si es solo en memoria). */
+    public void cargar() {
+        solicitudRepository.cargar();
     }
 
     private Solicitud buscarPorId(int id) {

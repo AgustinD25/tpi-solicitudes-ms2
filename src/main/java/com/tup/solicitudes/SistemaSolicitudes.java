@@ -16,54 +16,39 @@ public class SistemaSolicitudes {
     public static final int COD_TIPO_INVALIDO = -3;
     public static final int COD_PRIORIDAD_INVALIDA = -4;
 
-    private final SolicitudRepository solicitudRepository;
-    private final EstudianteRepository estudianteRepository;
-    private final ResponsableService responsableService;
     private final SolicitudService solicitudService;
-    private final ReporteService reporteService = new ReporteService();
-    private final PresentadorSolicitud presentador = new PresentadorSolicitud();
+    private final CatalogoResponsables responsableService;
+    private final ReporteService reporteService;
+    private final PresentadorSolicitud presentador;
 
     /** Sin ruta, los datos quedan solo en memoria; con ruta, se guardan ademas en un archivo CSV. */
     public SistemaSolicitudes(String rutaArchivo) {
-        this(new ResponsableService(), rutaArchivo);
+        this(ConfiguracionSistema.paraArchivo(rutaArchivo));
     }
 
-    /** Permite elegir cualquier almacenamiento (DIP). */
-    public SistemaSolicitudes(SolicitudRepository solicitudRepository, EstudianteRepository estudianteRepository) {
-        this(new ResponsableService(), solicitudRepository, estudianteRepository);
+    /**
+     * Crea el sistema con las piezas ya armadas por {@link ConfiguracionSistema} (cualquier almacenamiento: DIP).
+     * Es un metodo de fabrica y no un constructor publico para que {@code new SistemaSolicitudes(null)} siga
+     * significando "solo memoria" sin ambiguedad.
+     */
+    public static SistemaSolicitudes con(ConfiguracionSistema.Componentes componentes) {
+        return new SistemaSolicitudes(componentes);
     }
 
-    private SistemaSolicitudes(ResponsableService responsableService, String rutaArchivo) {
-        this(responsableService, crearRepositorio(rutaArchivo, responsableService));
-    }
-
-    private SistemaSolicitudes(ResponsableService responsableService, RepositorioEnMemoria repositorio) {
-        this(responsableService, repositorio, repositorio);
-    }
-
-    private SistemaSolicitudes(ResponsableService responsableService, SolicitudRepository solicitudRepository,
-                               EstudianteRepository estudianteRepository) {
-        this.responsableService = responsableService;
-        this.solicitudRepository = solicitudRepository;
-        this.estudianteRepository = estudianteRepository;
-        this.solicitudService = new SolicitudService(solicitudRepository, estudianteRepository, responsableService);
-    }
-
-    private static RepositorioEnMemoria crearRepositorio(String rutaArchivo, ResponsableService responsables) {
-        if (rutaArchivo == null) {
-            return new RepositorioEnMemoria();
-        }
-        return new RepositorioCsv(rutaArchivo, id -> responsables.buscarPorId(id).orElse(null),
-                mensaje -> System.out.println("Error: " + mensaje));
+    private SistemaSolicitudes(ConfiguracionSistema.Componentes componentes) {
+        this.solicitudService = componentes.solicitudes();
+        this.responsableService = componentes.responsables();
+        this.reporteService = componentes.reportes();
+        this.presentador = componentes.presentador();
     }
 
     // Las listas se exponen como copias no modificables: quien las lee no puede alterar el estado interno.
     public List<Solicitud> getSolicitudes() {
-        return solicitudRepository.listarTodas();
+        return solicitudService.listarTodas();
     }
 
     public List<Estudiante> getEstudiantes() {
-        return estudianteRepository.listarTodos();
+        return solicitudService.listarEstudiantes();
     }
 
     public List<Responsable> getResponsables() {
@@ -198,6 +183,6 @@ public class SistemaSolicitudes {
      * completan su responsable en cuanto este existe.
      */
     public void cargar() {
-        solicitudRepository.cargar();
+        solicitudService.cargar();
     }
 }
