@@ -248,7 +248,7 @@ A completar a medida que se resuelven los hallazgos.
 
 | ID | Estado (Corregido / Diferido / Rechazado) | Commit | Justificación o nota |
 |---|---|---|---|
-| CR-01 | Abierto | | |
+| CR-01 | Corregido | `5d8bd02` | Carga todo o nada: si alguna linea es invalida no se carga nada, se informan las lineas, se reservan los ids hasta el mayor visto y, antes de reescribir, se hace una copia `.bak-<fecha>`. Captura excepciones especificas. 4 tests nuevos (`RepositorioCsvTest`). |
 | CR-02 | Abierto | | |
 | CR-03 | Abierto | | |
 | CR-04 | Abierto | | |
