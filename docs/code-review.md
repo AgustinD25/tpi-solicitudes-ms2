@@ -254,7 +254,7 @@ A completar a medida que se resuelven los hallazgos.
 | CR-04 | Corregido | `931a89a` | `enum Area` concentra los textos (antes en `TipoSolicitud`, `ResponsableService` y `Main`); `registrarResponsable` con area nula devuelve `null` y muestra `Error: area invalida`. Ya no queda ningun texto de area fuera del enum. 6 tests nuevos (`ResponsableServiceTest`). |
 | CR-05 | Abierto | | |
 | CR-06 | Corregido | `9676e07` | `ConfiguracionSistema` es el unico lugar de armado; la fachada tiene dos constructores (`String` y uno privado con las piezas, expuesto como `SistemaSolicitudes.con(...)` para que `new SistemaSolicitudes(null)` no sea ambiguo); `SolicitudService` depende de la interfaz `CatalogoResponsables`; el sistema se puede armar con CSV y su catalogo. 3 tests nuevos (`ConfiguracionSistemaTest`). |
-| CR-07 | Abierto | | |
+| CR-07 | Corregido | `804b86b` | 27 tests unitarios nuevos de `EstadoSolicitud`, `TipoSolicitud`, `FormatoCsv`, `ValidadorEmail` y `SolicitudService`, que se suman a los agregados en CR-01 a CR-06 (101 en total). JaCoCo 0.8.12 en el `pom.xml`: 96,6 % de lineas sin contar `Main` (umbral propuesto: 80 %). Evidencia en `docs/evidencias/jacoco-resumen.md` y `jacoco-cobertura.csv`. |
 | CR-08 | Abierto | | |
 | CR-09 | Abierto | | |
 | CR-10 | Abierto | | |
